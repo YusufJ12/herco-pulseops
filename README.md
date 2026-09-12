@@ -8,6 +8,23 @@
 
 ---
 
+## Daftar Isi
+1. [Ikhtisar & Nilai Bisnis](#1-ikhtisar--nilai-bisnis)
+2. [Arsitektur & Alur Permintaan](#2-arsitektur--alur-permintaan)
+3. [Struktur Kode & Peta Berkas](#3-struktur-kode--peta-berkas)
+4. [Panduan Memulai Cepat (Docker & Lokal)](#4-panduan-memulai-cepat)
+5. [Pengujian Otomatis & Pipeline CI/CD](#5-pengujian-otomatis--pipeline-cicd-automated-testing)
+6. [Task Runner Pengembang (Makefile)](#6-task-runner-pengembang-makefile)
+7. [Referensi Environment Variables](#7-referensi-environment-variables)
+8. [Referensi REST API & Endpoint Telemetri](#8-referensi-rest-api--endpoint-telemetri)
+9. [Panduan untuk Engineer Penerus (Handover Guide)](#9-panduan-untuk-engineer-penerus-handover-guide)
+10. [Panduan Kontribusi & Standar Pengembang (Contributing Guide)](#10-panduan-kontribusi--standar-pengembang-contributing-guide)
+11. [Keamanan & Pengerasan Produksi (Security Hardening)](#11-keamanan--pengerasan-produksi-security-hardening)
+12. [Panduan Deployment Cloud (Render.com / PaaS)](#12-panduan-deployment-cloud-rendercom--paas)
+13. [Pernyataan Kolaborasi AI & Vibe Coding](#13-pernyataan-kolaborasi-ai--vibe-coding)
+
+---
+
 ## 1. Ikhtisar & Nilai Bisnis
 
 **PulseOps** dirancang untuk menjembatani celah observabilitas pada arsitektur cloud modern (seperti Vercel, API cloud, dan microservices). Aplikasi ini menjalankan probe kesehatan HTTP/S berkala, mengukur latensi jaringan, melacak sisa masa aktif sertifikat SSL/TLS, menganalisis header cache CDN edge (`x-vercel-cache`), dan mengkalkulasi persentase uptime SLA berjalan.
@@ -183,7 +200,7 @@ Tersedia target `make` untuk standarisasi proses development tim:
 
 ---
 
-## 6. Referensi Environment Variables
+## 7. Referensi Environment Variables
 
 Aplikasi dapat dikonfigurasi melalui Environment Variables tanpa mengubah kode sumber:
 
@@ -197,7 +214,7 @@ Aplikasi dapat dikonfigurasi melalui Environment Variables tanpa mengubah kode s
 
 ---
 
-## 7. Referensi REST API & Endpoint Telemetri
+## 8. Referensi REST API & Endpoint Telemetri
 
 ### Kesehatan & Observabilitas
 - **`GET /healthz`**  
@@ -252,7 +269,7 @@ Aplikasi dapat dikonfigurasi melalui Environment Variables tanpa mengubah kode s
 
 ---
 
-## 8. Panduan untuk Engineer Penerus (Handover Guide)
+## 9. Panduan untuk Engineer Penerus (Handover Guide)
 
 ### Mengapa Pure-Go SQLite (`modernc.org/sqlite`)?
 Alih-alih driver CGO seperti `mattn/go-sqlite3` yang memerlukan GCC, pustaka C, dan komplikasi cross-compile, driver ini ditulis 100% dalam Go murni. Manfaatnya:
@@ -279,7 +296,7 @@ docker compose exec pulseops /bin/sh -c "ls -lh /data"
 
 ---
 
-## 9. Panduan Kontribusi & Standar Pengembang (Contributing Guide)
+## 10. Panduan Kontribusi & Standar Pengembang (Contributing Guide)
 
 Seluruh panduan kontribusi telah disatukan di sini agar setiap engineer dapat langsung berkolaborasi dengan standar yang sama:
 
@@ -319,7 +336,7 @@ Sebelum push ke branch `main` atau membuka PR:
 
 ---
 
-## 10. Keamanan & Pengerasan Produksi (Security Hardening)
+## 11. Keamanan & Pengerasan Produksi (Security Hardening)
 
 - **Non-Root Execution:** Kontainer berjalan di bawah user `appuser:appgroup` (`UID 10001`). Proses tidak memiliki hak akses root di dalam container.
 - **Graceful Shutdown:** `cmd/server/main.go` menangani sinyal OS `SIGINT` dan `SIGTERM` dengan `context.WithTimeout(5s)`, memastikan koneksi aktif diselesaikan dan database di-flush sebelum proses keluar.
@@ -328,7 +345,7 @@ Sebelum push ke branch `main` atau membuka PR:
 
 ---
 
-## 11. Panduan Deployment Cloud (Render.com / PaaS)
+## 12. Panduan Deployment Cloud (Render.com / PaaS)
 
 Aplikasi ini siap di-deploy langsung ke platform cloud gratis seperti **Render.com** tanpa memerlukan VPS:
 
@@ -342,7 +359,7 @@ Aplikasi ini siap di-deploy langsung ke platform cloud gratis seperti **Render.c
 
 ---
 
-## 12. Pernyataan Kolaborasi AI & Vibe Coding
+## 13. Pernyataan Kolaborasi AI & Vibe Coding
 
 Proyek ini dirancang dan dikembangkan dengan memanfaatkan integrasi **GitHub Copilot (AI / Vibe Coding)**:
 - **Arsitektur Cepat & Tepat:** AI digunakan untuk mempercepat scaffolding pola SRE cloud-native, penyusunan Docker multi-stage, dan pembuatan mock test suite.

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pulseops
+  labels:
+    app.kubernetes.io/name: pulseops
+    app.kubernetes.io/part-of: pulseops-monitoring

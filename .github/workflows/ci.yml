@@ -61,6 +61,16 @@ jobs:
           load: true
           tags: pulseops:ci-test
 
+      - name: Run Trivy Vulnerability Scanner (DevSecOps)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'pulseops:ci-test'
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
       - name: Smoke Test Container Health
         run: |
           docker run -d --name pulseops-ci -p 8080:8080 pulseops:ci-test

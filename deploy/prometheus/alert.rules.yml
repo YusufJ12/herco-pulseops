@@ -1,0 +1,38 @@
+groups:
+  - name: pulseops_alerts
+    rules:
+      - alert: TargetDown
+        expr: pulseops_target_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Target {{ $labels.name }} sedang mengalami downtime"
+          description: "Target {{ $labels.url }} tidak merespons probe HTTP selama lebih dari 1 menit."
+
+      - alert: HighLatencyWarning
+        expr: pulseops_target_latency_ms > 1000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latensi tinggi terdeteksi pada {{ $labels.name }}"
+          description: "Latensi target {{ $labels.url }} melebihi 1000ms selama 2 menit berturut-turut (saat ini {{ $value }}ms)."
+
+      - alert: SSLExpirationWarning
+        expr: pulseops_target_ssl_expiry_days < 14
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Sertifikat SSL {{ $labels.name }} akan segera kedaluwarsa"
+          description: "Sertifikat SSL untuk {{ $labels.url }} tersisa kurang dari 14 hari (sisa: {{ $value }} hari)."
+
+      - alert: SSLExpirationCritical
+        expr: pulseops_target_ssl_expiry_days < 3
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: "KRITIKAL: Sertifikat SSL {{ $labels.name }} kedaluwarsa dalam < 3 hari"
+          description: "Sertifikat SSL untuk {{ $labels.url }} akan kedaluwarsa dalam kurun waktu kurang dari 3 hari (sisa: {{ $value }} hari). Segera lakukan rotasi cert."

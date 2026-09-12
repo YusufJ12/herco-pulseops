@@ -20,7 +20,7 @@
 9. [Panduan untuk Engineer Penerus (Handover Guide)](#9-panduan-untuk-engineer-penerus-handover-guide)
 10. [Panduan Kontribusi & Standar Pengembang (Contributing Guide)](#10-panduan-kontribusi--standar-pengembang-contributing-guide)
 11. [Keamanan & Pengerasan Produksi (Security Hardening)](#11-keamanan--pengerasan-produksi-security-hardening)
-12. [Panduan Deployment Cloud (Render.com / PaaS)](#12-panduan-deployment-cloud-rendercom--paas)
+12. [Panduan Deployment Cloud & Kubernetes (Render.com / K8s)](#12-panduan-deployment-cloud--kubernetes-rendercom--k8s)
 13. [Pernyataan Kolaborasi AI & Vibe Coding](#13-pernyataan-kolaborasi-ai--vibe-coding)
 
 ---
@@ -80,7 +80,10 @@ Untuk mempermudah engineer memahami tata letak dan peran tiap komponen:
 │       └── main.go                # Entrypoint aplikasi, graceful shutdown, penanganan sinyal (SIGINT/SIGTERM)
 ├── deploy/
 │   ├── grafana/provisioning/      # Datasource Grafana & dashboard SRE otomatis terpasang
-│   └── prometheus/prometheus.yml  # Konfigurasi scraper Prometheus ke pulseops:8080/metrics
+│   ├── k8s/                       # Manifests Kubernetes & Kustomize GitOps (Deployment, PVC, Service)
+│   └── prometheus/
+│       ├── alert.rules.yml        # Aturan alerting SRE Prometheus (Downtime, High Latency, SSL Expiry)
+│       └── prometheus.yml         # Konfigurasi scraper & evaluator alert Prometheus
 ├── internal/
 │   ├── config/
 │   │   └── config.go              # Pengurai environment variable (PORT, DB_PATH, PROBE_INTERVAL_SECONDS)
@@ -170,6 +173,7 @@ Setiap kali ada `push` atau `Pull Request` ke branch `main`, workflow `.github/w
 1. **Pemeriksaan Format (`gofmt`)**: Memastikan konsistensi gaya kode standar Go.
 2. **Eksekusi Test & Coverage**: Menjalankan seluruh test suite dan menghasilkan laporan coverage (`go test -v -coverprofile=coverage.txt`).
 3. **Docker Build Smoke Test**: Menguji proses kompilasi container multi-stage dan memverifikasi kesehatan liveness probe `/healthz`.
+4. **DevSecOps Scanner (Trivy)**: Pemindaian otomatis terhadap kerentanan keamanan kontainer (`CRITICAL,HIGH`) sebelum image dinyatakan siap rilis.
 
 ### C. Menjalankan Test Sendiri Secara Mandiri
 Pilih salah satu cara berikut:
@@ -248,6 +252,11 @@ Aplikasi dapat dikonfigurasi melalui Environment Variables tanpa mengubah kode s
   # TYPE pulseops_target_uptime_percent gauge
   pulseops_target_uptime_percent{id="1",name="Yusuf Portfolio",url="https://portfolioyusufjaelani.vercel.app"} 100.00
   ```
+
+- **Aturan Alerting SRE Bawaan (`deploy/prometheus/alert.rules.yml`)**:
+  - `TargetDown` (*Critical*): Memicu insiden saat status `pulseops_target_up == 0` selama > 1 menit.
+  - `HighLatencyWarning` (*Warning*): Memicu peringatan saat latensi `pulseops_target_latency_ms > 1000` selama > 2 menit.
+  - `SSLExpirationWarning` & `Critical`: Peringatan proaktif saat sisa masa aktif sertifikat SSL `< 14` hari atau `< 3` hari.
 
 ### API Pengelolaan Target
 - **`GET /api/targets`**  
@@ -345,8 +354,24 @@ Sebelum push ke branch `main` atau membuka PR:
 
 ---
 
-## 12. Panduan Deployment Cloud (Render.com / PaaS)
+## 12. Panduan Deployment Cloud & Kubernetes (Render.com / K8s)
 
+### A. Deployment Kubernetes via Kustomize (GitOps Ready)
+Manifests Kubernetes siap produksi telah disediakan di direktori `deploy/k8s/` dengan spesifikasi non-root security context, persistent volume claim, dan probe kesehatan bawaan:
+
+```bash
+# 1. Tinjau output konfigurasi yang digenerate oleh Kustomize
+kubectl kustomize deploy/k8s
+
+# 2. Terapkan langsung ke cluster Kubernetes (ArgoCD / Flux / kubectl)
+kubectl apply -k deploy/k8s
+
+# 3. Verifikasi status pod dan service
+kubectl get pods -n pulseops
+kubectl get svc -n pulseops
+```
+
+### B. Deployment Cloud Gratis (Render.com / PaaS)
 Aplikasi ini siap di-deploy langsung ke platform cloud gratis seperti **Render.com** tanpa memerlukan VPS:
 
 1. Push repository ini ke GitHub.

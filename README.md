@@ -57,11 +57,12 @@ flowchart TD
 docker compose up -d --build
 ```
 
-Buka di browser:
+Setelah container berjalan:
 - **Web Dashboard:** [http://localhost:8080](http://localhost:8080)
-- **Prometheus Metrics:** [http://localhost:8080/metrics](http://localhost:8080/metrics)
+- **Grafana Live Charts:** [http://localhost:3000](http://localhost:3000) *(Auto-login, dashboard otomatis terpasang)*
+- **Prometheus Scraper:** [http://localhost:9090](http://localhost:9090)
+- **Raw Prometheus Metrics:** [http://localhost:8080/metrics](http://localhost:8080/metrics)
 - **Liveness Probe:** [http://localhost:8080/healthz](http://localhost:8080/healthz)
-- **Readiness Probe:** [http://localhost:8080/readyz](http://localhost:8080/readyz)
 
 Secara default, PulseOps langsung mengawasi: `https://portfolioyusufjaelani.vercel.app`.
 

@@ -10,7 +10,7 @@ services:
     environment:
       - PORT=8080
       - DB_PATH=/data/pulseops.db
-      - PROBE_INTERVAL_SECONDS=30
+      - PROBE_INTERVAL_SECONDS=15
       - DEFAULT_TARGET_URL=https://portfolioyusufjaelani.vercel.app
       - DEFAULT_TARGET_NAME=Yusuf Portfolio
     volumes:
@@ -21,6 +21,36 @@ services:
       timeout: 5s
       retries: 3
       start_period: 5s
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: pulseops-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      pulseops:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: pulseops-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/pulseops-dashboard.json
+    volumes:
+      - ./deploy/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./deploy/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+    depends_on:
+      - prometheus
 
 volumes:
   pulseops_data:

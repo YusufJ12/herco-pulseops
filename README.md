@@ -85,8 +85,7 @@ Untuk mempermudah engineer memahami tata letak dan peran tiap komponen:
 ├── Dockerfile                     # Build multi-stage aman (golang:1.23-alpine -> alpine:3.20)
 ├── docker-compose.yml             # Orkestrator stack: PulseOps + Prometheus + Grafana
 ├── Makefile                       # Runner perintah developer (make test, make docker-compose-up)
-├── CONTRIBUTING.md                # Panduan kontribusi, konvensi kode & checklist Pull Request
-└── README.md                      # Dokumentasi komprehensif sistem
+└── README.md                      # Dokumentasi komprehensif tunggal (termasuk panduan kontribusi & testing)
 ```
 
 ---
@@ -280,28 +279,43 @@ docker compose exec pulseops /bin/sh -c "ls -lh /data"
 
 ---
 
-## 9. Standar Kode & Panduan Kontribusi
+## 9. Panduan Kontribusi & Standar Pengembang (Contributing Guide)
 
-Semua panduan kontribusi disatukan di sini agar engineer dapat langsung berkontribusi:
+Seluruh panduan kontribusi telah disatukan di sini agar setiap engineer dapat langsung berkolaborasi dengan standar yang sama:
 
-### Standar Kualitas (Zero-Warning)
-- Wajib memformat kode Go: `go fmt ./...`
-- Wajib memastikan 0 issue pada SonarLint / SonarQube (cognitive complexity < 15, valid HTML labels, clean scoping).
-- Tidak menggunakan credential rahasia atau tautan localhost di tampilan produksi.
+### A. Prinsip Inti Pengembangan
+- **YAGNI & Minim Dependensi:** Utamakan pustaka standar Go (`net/http`, `crypto/tls`, `log/slog`) untuk binary yang ramping dan performa tinggi tanpa dependensi yang tidak diperlukan.
+- **Portabilitas Pure-Go:** Menjaga agar driver database tetap menggunakan `modernc.org/sqlite` sehingga kompilasi bebas CGO (`CGO_ENABLED=0`) dan dapat berjalan di scratch/alpine container tanpa GCC.
+- **Kualitas Bersih (Zero-Warning):** Kode Go, HTML, dan JavaScript harus bersih dari issue SonarLint/SonarQube (kompleksitas kognitif < 15, aksesibilitas form label valid, scope variabel terisolasi).
 
-### Format Commit (Conventional Commits)
-Gunakan format pesan commit standar:
-- `feat: ...` untuk fitur baru
+### B. Menjalankan Pengembangan Langsung (Native Go)
+Jika tidak ingin menggunakan Docker saat development:
+```bash
+# 1. Unduh dependensi modul Go
+go mod download
+
+# 2. Jalankan seluruh test unit & integrasi
+go test -v ./...
+
+# 3. Jalankan server secara lokal
+DB_PATH=./pulseops.db PORT=8080 go run ./cmd/server
+```
+
+### C. Format Pesan Commit (Conventional Commits)
+Setiap commit wajib mengikuti format terstruktur:
+- `feat: ...` untuk penambahan fitur baru
 - `fix: ...` untuk perbaikan bug
-- `refactor: ...` untuk restrukturisasi kode
-- `docs: ...` untuk pembaruan dokumentasi
-- `test: ...` untuk penambahan unit/integration test
+- `refactor: ...` untuk restrukturisasi kode tanpa mengubah perilaku fitur
+- `docs: ...` untuk perubahan dokumentasi
+- `test: ...` untuk penambahan atau pembaruan pengujian otomatis
 
-### Checklist Sebelum Membuka Pull Request
-- [ ] Pengujian otomatis lulus 100%: `make test`
-- [ ] Format kode rapi: `go fmt ./...`
-- [ ] Image Docker berhasil di-build: `make docker-build`
-- [ ] Tidak ada warning linter aktif di IDE.
+### D. Checklist Sebelum Mengajukan Pull Request
+Sebelum push ke branch `main` atau membuka PR:
+- [ ] Seluruh pengujian otomatis lulus 100%: `make test` atau `go test -v ./...`
+- [ ] Format kode rapi sesuai standar Go: `go fmt ./...`
+- [ ] Image Docker berhasil dibangun: `make docker-build`
+- [ ] Tidak ada hardcoded credential, secret, atau tautan localhost di tampilan produksi.
+- [ ] SonarLint menunjukkan 0 warning / 0 code smell di IDE.
 
 ---
 

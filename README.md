@@ -20,7 +20,7 @@
 9. [Panduan untuk Engineer Penerus (Handover Guide)](#9-panduan-untuk-engineer-penerus-handover-guide)
 10. [Panduan Kontribusi & Standar Pengembang (Contributing Guide)](#10-panduan-kontribusi--standar-pengembang-contributing-guide)
 11. [Keamanan & Pengerasan Produksi (Security Hardening)](#11-keamanan--pengerasan-produksi-security-hardening)
-12. [Panduan Deployment Cloud & Kubernetes (Render.com / K8s)](#12-panduan-deployment-cloud--kubernetes-rendercom--k8s)
+12. [Panduan Deployment Kubernetes, Terraform & Cloud](#12-panduan-deployment-kubernetes-terraform--cloud)
 13. [Pernyataan Kolaborasi AI & Vibe Coding](#13-pernyataan-kolaborasi-ai--vibe-coding)
 
 ---
@@ -80,10 +80,12 @@ Untuk mempermudah engineer memahami tata letak dan peran tiap komponen:
 │       └── main.go                # Entrypoint aplikasi, graceful shutdown, penanganan sinyal (SIGINT/SIGTERM)
 ├── deploy/
 │   ├── grafana/provisioning/      # Datasource Grafana & dashboard SRE otomatis terpasang
-│   ├── k8s/                       # Manifests Kubernetes & Kustomize GitOps (Deployment, PVC, Service)
-│   └── prometheus/
-│       ├── alert.rules.yml        # Aturan alerting SRE Prometheus (Downtime, High Latency, SSL Expiry)
-│       └── prometheus.yml         # Konfigurasi scraper & evaluator alert Prometheus
+│   ├── k8s/                       # Manifests K8s GitOps (Deployment, PVC, Service, NetworkPolicy, Ingress)
+│   ├── prometheus/
+│   │   ├── alert.rules.yml        # Aturan alerting SRE Prometheus (Downtime, High Latency, SSL Expiry)
+│   │   ├── slo.rules.yml          # Standar Google SRE: SLI Uptime Ratio & Error Budget Burn Rate
+│   │   └── prometheus.yml         # Konfigurasi scraper & evaluator alert/SLO Prometheus
+│   └── terraform/                 # Infrastructure as Code (IaC): provisioning otomatis container Docker
 ├── internal/
 │   ├── config/
 │   │   └── config.go              # Pengurai environment variable (PORT, DB_PATH, PROBE_INTERVAL_SECONDS)
@@ -174,6 +176,7 @@ Setiap kali ada `push` atau `Pull Request` ke branch `main`, workflow `.github/w
 2. **Eksekusi Test & Coverage**: Menjalankan seluruh test suite dan menghasilkan laporan coverage (`go test -v -coverprofile=coverage.txt`).
 3. **Docker Build Smoke Test**: Menguji proses kompilasi container multi-stage dan memverifikasi kesehatan liveness probe `/healthz`.
 4. **DevSecOps Scanner (Trivy)**: Pemindaian otomatis terhadap kerentanan keamanan kontainer (`CRITICAL,HIGH`) sebelum image dinyatakan siap rilis.
+5. **Continuous Delivery (Publish ke GHCR)**: Otomasi kompilasi image multi-platform (`linux/amd64`, `linux/arm64`) dan publikasi ke GitHub Container Registry (`ghcr.io/yusufj12/pulseops:latest`, `:1.0.0`).
 
 ### C. Menjalankan Test Sendiri Secara Mandiri
 Pilih salah satu cara berikut:
@@ -257,6 +260,11 @@ Aplikasi dapat dikonfigurasi melalui Environment Variables tanpa mengubah kode s
   - `TargetDown` (*Critical*): Memicu insiden saat status `pulseops_target_up == 0` selama > 1 menit.
   - `HighLatencyWarning` (*Warning*): Memicu peringatan saat latensi `pulseops_target_latency_ms > 1000` selama > 2 menit.
   - `SSLExpirationWarning` & `Critical`: Peringatan proaktif saat sisa masa aktif sertifikat SSL `< 14` hari atau `< 3` hari.
+
+- **Standar Google SRE: SLI/SLO & Error Budget (`deploy/prometheus/slo.rules.yml`)**:
+  - `pulseops:target_uptime_ratio:rate1h`: Rasio ketersediaan aktual bergulir (*Service Level Indicator*).
+  - `pulseops:error_budget_burn_rate_1h`: Perhitungan *Error Budget Burn Rate* terhadap target SLA/SLO $99.9\%$.
+  - `ErrorBudgetFastBurn` (*Critical*): Memicu eskalasi saat error budget terbakar $> 14.4\times$ lebih cepat dari batas toleransi.
 
 ### API Pengelolaan Target
 - **`GET /api/targets`**  
@@ -354,10 +362,10 @@ Sebelum push ke branch `main` atau membuka PR:
 
 ---
 
-## 12. Panduan Deployment Cloud & Kubernetes (Render.com / K8s)
+## 12. Panduan Deployment Kubernetes, Terraform & Cloud
 
-### A. Deployment Kubernetes via Kustomize (GitOps Ready)
-Manifests Kubernetes siap produksi telah disediakan di direktori `deploy/k8s/` dengan spesifikasi non-root security context, persistent volume claim, dan probe kesehatan bawaan:
+### A. Deployment Kubernetes Zero-Trust via Kustomize (GitOps Ready)
+Manifests Kubernetes siap produksi telah disediakan di direktori `deploy/k8s/` dengan spesifikasi non-root security context (`UID 10001`), persistent volume claim, Zero-Trust `NetworkPolicy` (membatasi egress hanya ke DNS dan target HTTPS/HTTP), serta `Ingress` TLS:
 
 ```bash
 # 1. Tinjau output konfigurasi yang digenerate oleh Kustomize
@@ -366,12 +374,26 @@ kubectl kustomize deploy/k8s
 # 2. Terapkan langsung ke cluster Kubernetes (ArgoCD / Flux / kubectl)
 kubectl apply -k deploy/k8s
 
-# 3. Verifikasi status pod dan service
-kubectl get pods -n pulseops
-kubectl get svc -n pulseops
+# 3. Verifikasi status pod, service, dan network policy
+kubectl get pods,svc,networkpolicy,ingress -n pulseops
 ```
 
-### B. Deployment Cloud Gratis (Render.com / PaaS)
+### B. Provisioning Infrastruktur Deklaratif via Terraform (IaC)
+Konfigurasi Terraform telah disediakan di direktori `deploy/terraform/` untuk provisioning kontainer dan volume secara otomatis dan reproducible:
+
+```bash
+# Masuk ke direktori terraform
+cd deploy/terraform
+
+# Inisialisasi provider dan rencana eksekusi
+terraform init
+terraform plan
+
+# Terapkan infrastruktur
+terraform apply
+```
+
+### C. Deployment Cloud Gratis (Render.com / PaaS)
 Aplikasi ini siap di-deploy langsung ke platform cloud gratis seperti **Render.com** tanpa memerlukan VPS:
 
 1. Push repository ini ke GitHub.

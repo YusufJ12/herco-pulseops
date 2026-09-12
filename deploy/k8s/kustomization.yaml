@@ -9,6 +9,8 @@ resources:
   - configmap.yaml
   - deployment.yaml
   - service.yaml
+  - networkpolicy.yaml
+  - ingress.yaml
 
 commonLabels:
   app.kubernetes.io/part-of: pulseops-monitoring

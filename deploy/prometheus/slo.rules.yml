@@ -1,0 +1,39 @@
+# Google SRE Service Level Objectives (SLO) & Indicators (SLI)
+# Target SLO: 99.9% Availability (Error Budget: 0.1%)
+groups:
+  - name: pulseops_sli_slo_rules
+    rules:
+      # SLI: Ketersediaan rata-rata per target dalam rentang waktu 5m, 1h, 24h
+      - record: pulseops:target_uptime_ratio:rate5m
+        expr: avg_over_time(pulseops_target_up[5m])
+
+      - record: pulseops:target_uptime_ratio:rate1h
+        expr: avg_over_time(pulseops_target_up[1h])
+
+      - record: pulseops:target_uptime_ratio:rate24h
+        expr: avg_over_time(pulseops_target_up[24h])
+
+      # Error Budget Burn Rate (SLO target: 99.9% atau error rate 0.001)
+      # Burn Rate = (1 - availability) / 0.001
+      - record: pulseops:error_budget_burn_rate_1h
+        expr: (1 - pulseops:target_uptime_ratio:rate1h) / 0.001
+
+      # Alert: Error Budget Burn Rate Kritis (Burn rate > 14.4 menghabiskan 100% budget 30 hari dalam 2 hari)
+      - alert: ErrorBudgetFastBurn
+        expr: pulseops:error_budget_burn_rate_1h > 14.4
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Error Budget Terbakar Sangat Cepat pada {{ $labels.name }}"
+          description: "Target {{ $labels.name }} membakar lebih dari 5% error budget dalam 1 jam (Burn Rate: {{ $value }}x)."
+
+      # Alert: Latensi P95 Terlampaui (> 800ms)
+      - alert: SLOHighLatencyP95
+        expr: pulseops_target_latency_ms > 800
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pelanggaran Latensi SLI pada {{ $labels.name }}"
+          description: "Latensi target {{ $labels.name }} konsisten di atas 800ms selama 5 menit berturut-turut."

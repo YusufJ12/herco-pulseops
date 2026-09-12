@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PulseOps | DevOps Health & Uptime Probe</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <style>
     @keyframes pulse-ring {
@@ -76,6 +77,24 @@
         <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Average Uptime SLA</div>
         <div id="stat-uptime" class="text-2xl font-bold text-emerald-400">100%</div>
         <div class="text-xs text-slate-500 mt-2">Rolling 50 probes window</div>
+      </div>
+    </div>
+
+    <!-- Integrated Real-time Latency Chart (DevOps Telemetry) -->
+    <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-5 mb-8 shadow-xl">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-800/80">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-chart-line text-emerald-400"></i>
+          <h2 class="font-bold text-white text-sm tracking-wide">Live Response Latency Telemetry (ms)</h2>
+          <span class="text-[10px] font-mono bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 px-2 py-0.5 rounded-full">Live Monitor</span>
+        </div>
+        <div class="text-xs font-mono text-slate-400 flex items-center gap-2">
+          <span>Auto-syncing every 15s</span>
+          <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+        </div>
+      </div>
+      <div class="relative h-64 w-full">
+        <canvas id="latencyChart"></canvas>
       </div>
     </div>
 

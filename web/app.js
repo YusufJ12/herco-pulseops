@@ -156,6 +156,120 @@ document.addEventListener('DOMContentLoaded', () => {
     const avgLat = countedLat > 0 ? Math.round(totalLat / countedLat) : 0;
     const avgUptime = summaries.length > 0 ? (totalUptime / summaries.length).toFixed(1) : 100;
     updateStats(summaries, avgLat, avgUptime, allUp);
+    updateChart(summaries);
+  }
+
+  // Chart.js instance management
+  let telemetryChart = null;
+  const palette = [
+    { border: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' }, // emerald
+    { border: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)' },  // sky
+    { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },  // amber
+    { border: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)' },  // purple
+  ];
+
+  async function updateChart(summaries) {
+    const canvas = document.getElementById('latencyChart');
+    if (!canvas) return;
+
+    if (!summaries || summaries.length === 0) {
+      if (telemetryChart) {
+        telemetryChart.destroy();
+        telemetryChart = null;
+      }
+      return;
+    }
+
+    try {
+      // Fetch history for all targets
+      const datasets = [];
+      let commonLabels = [];
+
+      for (let i = 0; i < summaries.length; i++) {
+        const s = summaries[i];
+        const res = await fetch(`/api/targets/${s.target.id}/history?limit=25`);
+        if (!res.ok) continue;
+        const history = await res.json();
+        
+        // Reverse so oldest is left, latest is right
+        const chron = [...history].reverse();
+        const color = palette[i % palette.length];
+
+        if (chron.length > commonLabels.length) {
+          commonLabels = chron.map(h => {
+            const d = new Date(h.created_at);
+            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          });
+        }
+
+        datasets.push({
+          label: `${s.target.name} (${s.target.url})`,
+          data: chron.map(h => h.latency_ms),
+          borderColor: color.border,
+          backgroundColor: color.bg,
+          borderWidth: 2,
+          fill: true,
+          tension: 0.35,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+        });
+      }
+
+      if (telemetryChart) {
+        telemetryChart.data.labels = commonLabels;
+        telemetryChart.data.datasets = datasets;
+        telemetryChart.update('none');
+      } else {
+        const ctx = canvas.getContext('2d');
+        telemetryChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: commonLabels,
+            datasets: datasets
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false
+            },
+            plugins: {
+              legend: {
+                labels: {
+                  color: '#94a3b8',
+                  font: { family: 'monospace', size: 11 }
+                }
+              },
+              tooltip: {
+                backgroundColor: '#0f172a',
+                titleColor: '#f8fafc',
+                bodyColor: '#38bdf8',
+                borderColor: '#334155',
+                borderWidth: 1,
+                callbacks: {
+                  label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y} ms`
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: 'rgba(51, 65, 85, 0.4)' },
+                ticks: { color: '#64748b', font: { family: 'monospace', size: 10 } }
+              },
+              y: {
+                title: { display: true, text: 'Latency (ms)', color: '#64748b', font: { family: 'monospace', size: 11 } },
+                grid: { color: 'rgba(51, 65, 85, 0.4)' },
+                ticks: { color: '#64748b', font: { family: 'monospace', size: 10 } },
+                suggestedMin: 0
+              }
+            }
+          }
+        });
+      }
+    } catch (err) {
+      console.warn('Failed rendering telemetry chart:', err);
+    }
   }
 
   function updateStats(summaries, avgLat, avgUptime, allUp = true) {

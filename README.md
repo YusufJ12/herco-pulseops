@@ -128,6 +128,20 @@ Akses layanan:
 - **Scraper Prometheus:** [http://localhost:9090](http://localhost:9090)
 - **Dashboard SRE Grafana:** [http://localhost:3000](http://localhost:3000) *(Login otomatis tanpa kata sandi)*
 
+#### Panduan Navigasi & Verifikasi Tiap Antarmuka:
+1. **Dashboard PulseOps ([http://localhost:8080](http://localhost:8080)):**
+   - Antarmuka visual untuk pengguna manusia (Tailwind CSS + Chart.js).
+   - Menyajikan daftar endpoint, status ketersediaan live, latensi respons, sisa hari SSL, tombol probe instan, dan grafik visual riwayat probe.
+2. **Prometheus UI ([http://localhost:9090](http://localhost:9090)):**
+   - **Tampilan Awal:** Pesan *"No data queried yet"* adalah kondisi normal default saat belum ada kueri yang dieksekusi.
+   - **Cara Menampilkan Data:** Masukkan nama metrik ke kolom **Expression** (misal: `pulseops_target_latency_ms` atau `pulseops_target_up`), lalu klik **Execute**. Pilih tab **Table** untuk nilai angka atau tab **Graph** untuk grafik pergerakan data.
+   - **Memeriksa Status Koneksi:** Buka menu **Status** $\rightarrow$ **Targets** (atau [http://localhost:9090/targets](http://localhost:9090/targets)). Target `pulseops:8080` harus berstatus hijau (**UP**).
+3. **Dashboard Grafana ([http://localhost:3000](http://localhost:3000)):**
+   - Langsung terbuka tanpa login (*anonymous access* aktif).
+   - Dashboard **"PulseOps - Telemetry & Uptime Dashboard"** langsung tersedia otomatis (*pre-provisioned*), menyajikan panel Total Targets, Availability Status, SSL Certificate Expiry, Rolling Uptime SLA, dan HTTP Latency Over Time.
+4. **Endpoint Telemetri Mesin (`/healthz`, `/readyz`, `/metrics`):**
+   - Berformat JSON (`{"status":"ok"}`) dan teks mentah OpenMetrics. Ini adalah standar machine-to-machine (M2M) yang dibaca oleh orkestrator Kubernetes dan scraper Prometheus.
+
 Untuk mematikan:
 ```bash
 docker compose down
@@ -321,6 +335,10 @@ docker compose exec pulseops /bin/sh -c "ls -lh /data"
      ```
 3. **Target Mengembalikan SSL Error**:
    - Engine prober memvalidasi sertifikat TLS publik secara default. Jika memantau layanan internal dengan *self-signed certificate*, sertifikat CA root institusi perlu disalin ke direktori `/usr/local/share/ca-certificates` pada tahap final Dockerfile.
+4. **Prometheus Menampilkan *"No data queried yet"***:
+   - Ini bukan error. Ini adalah antarmuka default saat belum mengeksekusi kueri PromQL. Ketik `pulseops_target_latency_ms` di kolom Expression lalu klik tombol biru **Execute**.
+5. **Grafana Sempat Menampilkan *"No data"***:
+   - Pastikan berkas `deploy/grafana/provisioning/datasources/datasource.yml` menyetel `uid: prometheus`. Jika baru diubah, jalankan `docker compose restart grafana` lalu refresh browser.
 
 ---
 

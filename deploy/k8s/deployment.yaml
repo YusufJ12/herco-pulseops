@@ -17,6 +17,7 @@ spec:
       labels:
         app.kubernetes.io/name: pulseops
     spec:
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
@@ -24,11 +25,34 @@ spec:
         fsGroup: 10001
       containers:
         - name: pulseops
-          image: ghcr.io/yusufj12/pulseops:latest
+          image: ghcr.io/yusufj12/pulseops:1.0.0
           imagePullPolicy: IfNotPresent
-          envFrom:
-            - configMapRef:
-                name: pulseops-config
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: pulseops-config
+                  key: PORT
+            - name: DB_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: pulseops-config
+                  key: DB_PATH
+            - name: PROBE_INTERVAL_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: pulseops-config
+                  key: PROBE_INTERVAL_SECONDS
+            - name: DEFAULT_TARGET_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: pulseops-config
+                  key: DEFAULT_TARGET_URL
+            - name: DEFAULT_TARGET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: pulseops-config
+                  key: DEFAULT_TARGET_NAME
           ports:
             - name: http
               containerPort: 8080
@@ -43,9 +67,11 @@ spec:
             requests:
               cpu: 50m
               memory: 64Mi
+              ephemeral-storage: 50Mi
             limits:
               cpu: 200m
               memory: 128Mi
+              ephemeral-storage: 100Mi
           livenessProbe:
             httpGet:
               path: /healthz

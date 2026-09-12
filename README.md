@@ -1,6 +1,6 @@
 # PulseOps 🩺
-> **Cloud-Native Uptime Monitor & Service Health Telemetry Daemon**  
-> Lightweight, resilient, single-binary SRE prober built with Go, pure-Go SQLite, embedded Chart.js UI, and native Prometheus metrics.
+> **Daemon Pemantau Uptime & Telemetri Kesehatan Layanan Berbasis Cloud-Native**  
+> Prober SRE ringan, tangguh, berformat single-binary yang dibangun dengan Go, SQLite pure-Go, antarmuka Chart.js tersemat, dan metrik Prometheus bawaan.
 
 [![CI / CD Pipeline](https://github.com/YusufJ12/herco-pulseops/actions/workflows/ci.yml/badge.svg)](https://github.com/YusufJ12/herco-pulseops/actions)
 [![Docker Image Size](https://img.shields.io/badge/docker%20image-<15MB-blue.svg)](Dockerfile)
@@ -8,90 +8,90 @@
 
 ---
 
-## 1. Overview & Business Value
+## 1. Ikhtisar & Nilai Bisnis
 
-**PulseOps** was engineered to solve the observability gap for modern cloud deployments (such as Vercel, cloud APIs, and microservices). It runs periodic HTTP/S health probes, measures network latency, tracks SSL/TLS certificate expiration days, analyzes edge CDN cache headers (`x-vercel-cache`), and calculates rolling SLA uptime percentages.
+**PulseOps** dirancang untuk menjembatani celah observabilitas pada arsitektur cloud modern (seperti Vercel, API cloud, dan microservices). Aplikasi ini menjalankan probe kesehatan HTTP/S berkala, mengukur latensi jaringan, melacak sisa masa aktif sertifikat SSL/TLS, menganalisis header cache CDN edge (`x-vercel-cache`), dan mengkalkulasi persentase uptime SLA berjalan.
 
-### Key Highlights
-- **Zero-Dependency Single Binary:** Frontend is embedded directly into the Go binary (`//go:embed`). No Node.js runtime, no static file web server needed in production.
-- **Pure-Go SQLite:** Uses `modernc.org/sqlite` (no CGO or GCC required). Compiles seamlessly on any architecture (ARM64, AMD64).
-- **Embedded Real-Time Telemetry:** Dashboard displays interactive latency charts powered by Chart.js without requiring external dashboards.
-- **Enterprise Observability:** Emits Prometheus gauge metrics (`/metrics`) and Kubernetes liveness/readiness probes (`/healthz`, `/readyz`).
-- **Hardened Multi-Stage Docker:** Alpine base image running under an unprivileged non-root user (`UID 10001`), resulting in a minimal attack surface and an image size of only ~8.5MB.
+### Fitur Unggulan
+- **Single Binary Tanpa Dependensi Luar:** Tampilan web tersemat langsung di dalam binary Go (`//go:embed`). Tidak membutuhkan runtime Node.js atau web server berkas statis terpisah di lingkungan produksi.
+- **SQLite Pure-Go:** Menggunakan driver `modernc.org/sqlite` (tanpa dependensi CGO atau compiler GCC). Dapat dikompilasi mulus di arsitektur apa pun (ARM64, AMD64).
+- **Telemetri Real-Time Tersemat:** Dashboard visual langsung menyajikan grafik latensi interaktif bertenaga Chart.js tanpa ketergantungan pada dashboard eksternal.
+- **Observabilitas Standar Enterprise:** Menyediakan eksporter metrik gauge format Prometheus (`/metrics`) serta probe liveness/readiness Kubernetes (`/healthz`, `/readyz`).
+- **Keamanan Docker Multi-Stage:** Base image Alpine minimalis yang berjalan di bawah user non-root tanpa hak istimewa (`UID 10001`), dengan ukuran image akhir hanya ~8.5MB.
 
 ---
 
-## 2. Architecture & Request Flow
+## 2. Arsitektur & Alur Permintaan
 
 ```mermaid
 flowchart TD
-    subgraph HostOrCloud ["Production Environment / Docker"]
-        subgraph Container ["PulseOps Container (Alpine, Non-Root appuser)"]
+    subgraph HostOrCloud ["Lingkungan Produksi / Docker"]
+        subgraph Container ["Container PulseOps (Alpine, User Non-Root appuser)"]
             Server["Go HTTP Server (:8080)"]
-            ProberDaemon["Prober Goroutine Daemon\n(Configurable Ticker)"]
-            Store[("Pure-Go SQLite\n/data/pulseops.db")]
-            WebUI["Embedded UI & Telemetry\n(Tailwind + Chart.js)"]
+            ProberDaemon["Daemon Goroutine Prober\n(Interval Ticker Terjadwal)"]
+            Store[("SQLite Pure-Go\n/data/pulseops.db")]
+            WebUI["UI & Telemetri Tersemat\n(Tailwind + Chart.js)"]
         end
 
         PrometheusStack["Prometheus (:9090) &\nGrafana (:3000)"]
     end
 
-    Target1["Vercel Portfolio\n(portfolioyusufjaelani.vercel.app)"]
-    Target2["Custom APIs / Microservices"]
+    Target1["Portfolio Vercel\n(portfolioyusufjaelani.vercel.app)"]
+    Target2["API / Layanan Tambahan"]
 
-    ProberDaemon -->|"1. HTTP GET & TLS Handshake"| Target1
-    ProberDaemon -->|"2. HTTP GET & TLS Handshake"| Target2
-    ProberDaemon -->|"3. Save Latency, Status, SSL Days"| Store
-    Server -->|"4. Query Summaries & History"| Store
-    Server -->|"5. Serve Embed UI & REST API"| WebUI
+    ProberDaemon -->|"1. HTTP GET & Handshake TLS"| Target1
+    ProberDaemon -->|"2. HTTP GET & Handshake TLS"| Target2
+    ProberDaemon -->|"3. Simpan Latensi, Status, Sisa Hari SSL"| Store
+    Server -->|"4. Ambil Ringkasan & Riwayat"| Store
+    Server -->|"5. Sajikan Web UI & REST API"| WebUI
     PrometheusStack -->|"6. Scrape /metrics"| Server
 ```
 
 ---
 
-## 3. Codebase Structure & File Map
+## 3. Struktur Kode & Peta Berkas
 
-Untuk memudahkan engineer lain memahami atau melanjutkan pengembangan codebase ini:
+Untuk mempermudah engineer memahami tata letak dan peran tiap komponen:
 
 ```
 .
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                 # Automated CI: gofmt, unit & integration tests, Docker build smoke test
+│       └── ci.yml                 # CI Otomatis: gofmt, test unit & integrasi, build smoke test Docker
 ├── cmd/
 │   └── server/
-│       └── main.go                # Application entrypoint, graceful shutdown, signal handling (SIGINT/SIGTERM)
+│       └── main.go                # Entrypoint aplikasi, graceful shutdown, penanganan sinyal (SIGINT/SIGTERM)
 ├── deploy/
-│   ├── grafana/provisioning/      # Auto-provisioned Grafana datasource & pre-configured SRE dashboard
-│   └── prometheus/prometheus.yml  # Prometheus scraper configuration targeting pulseops:8080/metrics
+│   ├── grafana/provisioning/      # Datasource Grafana & dashboard SRE otomatis terpasang
+│   └── prometheus/prometheus.yml  # Konfigurasi scraper Prometheus ke pulseops:8080/metrics
 ├── internal/
 │   ├── config/
-│   │   └── config.go              # Environment variable loader (PORT, DB_PATH, PROBE_INTERVAL_SECONDS)
+│   │   └── config.go              # Pengurai environment variable (PORT, DB_PATH, PROBE_INTERVAL_SECONDS)
 │   ├── handler/
-│   │   ├── handler.go             # REST API routes, Prometheus /metrics generator, /healthz, /readyz
-│   │   └── handler_test.go        # Unit tests for HTTP endpoints and Prometheus output
+│   │   ├── handler.go             # Router REST API, eksporter /metrics Prometheus, /healthz, /readyz
+│   │   └── handler_test.go        # Pengujian unit endpoint HTTP dan keluaran format Prometheus
 │   ├── model/
-│   │   └── target.go              # Core domain entities: Target, ProbeLog, TargetSummary
+│   │   └── target.go              # Entitas domain utama: Target, ProbeLog, TargetSummary
 │   ├── prober/
-│   │   ├── prober.go              # Network probing engine (HTTP latency, TLS/SSL expiry parsing, CDN headers)
-│   │   └── prober_test.go         # Unit tests for prober logic with mock HTTP/TLS servers
+│   │   ├── prober.go              # Engine probing jaringan (latensi HTTP, masa aktif SSL, header CDN)
+│   │   └── prober_test.go         # Pengujian unit engine prober dengan mock server HTTP/TLS
 │   └── store/
-│       ├── store.go               # SQLite repository layer (DDL schema, cascade foreign keys, SLA aggregation)
-│       └── store_test.go          # Unit tests for database transactions and calculations
+│       ├── store.go               # Lapisan repositori SQLite (skema DDL, relasi foreign key, kalkulasi SLA)
+│       └── store_test.go          # Pengujian unit transaksi database dan agregasi data
 ├── web/
-│   ├── app.js                     # Frontend telemetry logic, polling loop, Chart.js visualization
-│   ├── index.html                 # Embedded single-page dashboard styled with Tailwind CSS & FontAwesome
-│   └── web.go                     # Go embed declaration exporting web assets as fs.FS
-├── Dockerfile                     # Hardened multi-stage build (golang:1.23-alpine -> alpine:3.20)
-├── docker-compose.yml             # Orchestration stack: PulseOps + Prometheus + Grafana
-├── Makefile                       # Developer task runner (make test, make docker-compose-up)
-├── CONTRIBUTING.md                # Guide for contributors, coding conventions & PR checklist
-└── README.md                      # Comprehensive system documentation
+│   ├── app.js                     # Logika frontend, polling data telemetri, grafik Chart.js
+│   ├── index.html                 # Halaman dashboard tunggal berbalut Tailwind CSS & FontAwesome
+│   └── web.go                     # Deklarasi Go embed untuk mengekspor berkas web sebagai fs.FS
+├── Dockerfile                     # Build multi-stage aman (golang:1.23-alpine -> alpine:3.20)
+├── docker-compose.yml             # Orkestrator stack: PulseOps + Prometheus + Grafana
+├── Makefile                       # Runner perintah developer (make test, make docker-compose-up)
+├── CONTRIBUTING.md                # Panduan kontribusi, konvensi kode & checklist Pull Request
+└── README.md                      # Dokumentasi komprehensif sistem
 ```
 
 ---
 
-## 4. Quick Start
+## 4. Panduan Memulai Cepat
 
 ### Opsi A: Menggunakan Docker Compose (Direkomendasikan)
 Menjalankan seluruh ekosistem (PulseOps, Prometheus, dan Grafana) dalam satu perintah:
@@ -101,11 +101,11 @@ docker compose up -d --build
 ```
 
 Akses layanan:
-- **PulseOps Dashboard & Live Chart:** [http://localhost:8080](http://localhost:8080)
-- **Raw Prometheus Metrics:** [http://localhost:8080/metrics](http://localhost:8080/metrics)
-- **Kubernetes Health Check:** [http://localhost:8080/healthz](http://localhost:8080/healthz)
-- **Prometheus Scraper:** [http://localhost:9090](http://localhost:9090)
-- **Grafana SRE Dashboard:** [http://localhost:3000](http://localhost:3000) *(Anonymous auto-login diaktifkan)*
+- **Dashboard PulseOps & Grafik Live:** [http://localhost:8080](http://localhost:8080)
+- **Metrik Prometheus Mentah:** [http://localhost:8080/metrics](http://localhost:8080/metrics)
+- **Pemeriksaan Kesehatan (Health Check):** [http://localhost:8080/healthz](http://localhost:8080/healthz)
+- **Scraper Prometheus:** [http://localhost:9090](http://localhost:9090)
+- **Dashboard SRE Grafana:** [http://localhost:3000](http://localhost:3000) *(Login otomatis tanpa kata sandi)*
 
 Untuk mematikan:
 ```bash
@@ -130,7 +130,7 @@ DB_PATH=./pulseops.db PORT=8080 go run ./cmd/server
 
 ---
 
-## 5. Developer Task Runner (`Makefile`)
+## 5. Task Runner Pengembang (`Makefile`)
 
 Tersedia target `make` untuk standarisasi proses development tim:
 
@@ -144,7 +144,7 @@ Tersedia target `make` untuk standarisasi proses development tim:
 
 ---
 
-## 6. Environment Variables Reference
+## 6. Referensi Environment Variables
 
 Aplikasi dapat dikonfigurasi melalui Environment Variables tanpa mengubah kode sumber:
 
@@ -158,11 +158,11 @@ Aplikasi dapat dikonfigurasi melalui Environment Variables tanpa mengubah kode s
 
 ---
 
-## 7. REST API & Telemetry Endpoints
+## 7. Referensi REST API & Endpoint Telemetri
 
-### Health & Observability
+### Kesehatan & Observabilitas
 - **`GET /healthz`**  
-  Liveness probe untuk Kubernetes atau container orchestrator.  
+  Liveness probe untuk Kubernetes atau orchestrator container.  
   *Response:* `{"status":"ok"}` (200 OK)
 
 - **`GET /readyz`**  
@@ -170,14 +170,30 @@ Aplikasi dapat dikonfigurasi melalui Environment Variables tanpa mengubah kode s
   *Response:* `{"status":"ready"}` (200 OK)
 
 - **`GET /metrics`**  
-  Prometheus text format metric exporter untuk monitoring eksternal:
-  - `pulseops_targets_total`
-  - `pulseops_target_up{id="...",name="...",url="..."}`
-  - `pulseops_target_latency_ms{id="...",name="...",url="..."}`
-  - `pulseops_target_ssl_expiry_days{id="...",name="...",url="..."}`
-  - `pulseops_target_uptime_percent{id="...",name="...",url="..."}`
+  Eksporter metrik teks format Prometheus untuk sistem pemantau eksternal:
+  ```prometheus
+  # HELP pulseops_targets_total Total number of monitored targets
+  # TYPE pulseops_targets_total gauge
+  pulseops_targets_total 1
 
-### Target Management API
+  # HELP pulseops_target_up Status of target: 1 = UP, 0 = DOWN
+  # TYPE pulseops_target_up gauge
+  pulseops_target_up{id="1",name="Yusuf Portfolio",url="https://portfolioyusufjaelani.vercel.app"} 1
+
+  # HELP pulseops_target_latency_ms Latest latency in milliseconds
+  # TYPE pulseops_target_latency_ms gauge
+  pulseops_target_latency_ms{id="1",name="Yusuf Portfolio",url="https://portfolioyusufjaelani.vercel.app"} 142
+
+  # HELP pulseops_target_ssl_expiry_days Days until SSL certificate expires
+  # TYPE pulseops_target_ssl_expiry_days gauge
+  pulseops_target_ssl_expiry_days{id="1",name="Yusuf Portfolio",url="https://portfolioyusufjaelani.vercel.app"} 78
+
+  # HELP pulseops_target_uptime_percent Rolling uptime percentage
+  # TYPE pulseops_target_uptime_percent gauge
+  pulseops_target_uptime_percent{id="1",name="Yusuf Portfolio",url="https://portfolioyusufjaelani.vercel.app"} 100.00
+  ```
+
+### API Pengelolaan Target
 - **`GET /api/targets`**  
   Mengambil daftar semua target beserta ringkasan status probe terakhir dan kalkulasi SLA.
 - **`POST /api/targets`**  
@@ -197,7 +213,7 @@ Aplikasi dapat dikonfigurasi melalui Environment Variables tanpa mengubah kode s
 
 ---
 
-## 8. Panduan untuk Engineer yang Melanjutkan (Handover Guide)
+## 8. Panduan untuk Engineer Penerus (Handover Guide)
 
 ### Mengapa Pure-Go SQLite (`modernc.org/sqlite`)?
 Alih-alih driver CGO seperti `mattn/go-sqlite3` yang memerlukan GCC, pustaka C, dan komplikasi cross-compile, driver ini ditulis 100% dalam Go murni. Manfaatnya:
@@ -205,9 +221,49 @@ Alih-alih driver CGO seperti `mattn/go-sqlite3` yang memerlukan GCC, pustaka C, 
 - Build Docker berukuran sangat kecil (~8.5MB) dan bebas dari celah keamanan pustaka C host.
 
 ### Cara Menambahkan Metrik Baru (Contoh: Time to First Byte / TTFB)
-1. **Model:** Buka `internal/model/target.go`, tambahkan field `TTFBMs int64` pada `ProbeLog`.
+1. **Model:** Buka `internal/model/target.go`, tambahkan field `TTFBMs int64` pada struct `ProbeLog`.
 2. **Database:** Tambahkan kolom pada tabel `probe_logs` di `internal/store/store.go`.
 3. **Probing Engine:** Gunakan `httptrace.ClientTrace` pada `internal/prober/prober.go` untuk mencatat durasi `GotFirstResponseByte`.
+4. **Prometheus Exporter:** Tambahkan gauge `pulseops_target_ttfb_ms` pada fungsi `handleMetrics` di `internal/handler/handler.go`.
+5. **Frontend:** Tambahkan label telemetri baru pada `web/app.js`.
+
+### Cara Menginspeksi Database SQLite di Container
+```bash
+# Periksa keberadaan file database SQLite di dalam volume container
+docker compose exec pulseops /bin/sh -c "ls -lh /data"
+```
+
+---
+
+## 9. Keamanan & Pengerasan Produksi (Security Hardening)
+
+- **Non-Root Execution:** Kontainer berjalan di bawah user `appuser:appgroup` (`UID 10001`). Proses tidak memiliki hak akses root.
+- **Graceful Shutdown:** `cmd/server/main.go` menangani sinyal OS `SIGINT` dan `SIGTERM` dengan `context.WithTimeout(5s)`, memastikan koneksi aktif diselesaikan dan database di-flush sebelum proses keluar.
+- **Strict Client Timeout:** Prober menggunakan timeout ketat (10 detik) dan batas redirect maksimal 5 hops untuk mencegah DoS / kebocoran goroutine pada target lambat.
+- **SonarLint Zero Code Smells:** Seluruh kode Go, HTML, dan JavaScript telah diverifikasi bersih dari issue SonarLint (cognitive complexity < 15, zero label warnings, clean scoping).
+
+---
+
+## 10. Panduan Deployment Cloud (Render.com / PaaS)
+
+Aplikasi ini siap di-deploy langsung ke platform cloud gratis seperti **Render.com** tanpa memerlukan VPS:
+
+1. Push repository ini ke GitHub.
+2. Buka [dashboard.render.com](https://dashboard.render.com/) -> klik **New +** -> **Web Service**.
+3. Hubungkan ke repository ini.
+4. Render akan otomatis mendeteksi `Dockerfile` multi-stage:
+   - Environment: **Docker**
+   - Plan: **Free**
+5. Klik **Create Web Service**. Dalam waktu ~2 menit, PulseOps akan online dengan HTTPS gratis dan auto-renewal SSL.
+
+---
+
+## 11. Pernyataan Kolaborasi AI & Vibe Coding
+
+Proyek ini dirancang dan dikembangkan dengan memanfaatkan integrasi **GitHub Copilot (AI / Vibe Coding)**:
+- **Arsitektur Cepat & Tepat:** AI digunakan untuk mempercepat scaffolding pola SRE cloud-native, penyusunan Docker multi-stage, dan pembuatan mock test suite.
+- **Verifikasi Kualitas Ketat:** Setiap output diverifikasi terhadap standar keamanan SRE (user non-root, CGO disabled, timeout boundaries, dan kepatuhan SonarQube).
+- **Human-in-the-Loop:** Keputusan desain (pemilihan pure-Go SQLite, embedded Chart.js, penghapusan ketergantungan link localhost) diambil secara terarah untuk menghasilkan produk siap produksi yang mudah dirawat oleh engineer mana pun.
 4. **Prometheus Exporter:** Tambahkan gauge `pulseops_target_ttfb_ms` pada fungsi `handleMetrics` di `internal/handler/handler.go`.
 5. **Frontend:** Tambahkan label telemetri baru pada `web/app.js`.
 

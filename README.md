@@ -311,6 +311,17 @@ Alih-alih driver CGO seperti `mattn/go-sqlite3` yang memerlukan GCC, pustaka C, 
 docker compose exec pulseops /bin/sh -c "ls -lh /data"
 ```
 
+### Panduan Pemecahan Masalah Umum (Troubleshooting)
+1. **Port Konflik (`address already in use: 8080/9090/3000`)**:
+   - Jika port 8080 terpakai proses lain, ubah `PORT=8081` di file `.env` atau ubah pemetaan port host di `docker-compose.yml` (misal `"8081:8080"`).
+2. **Izin Akses Database Volume (`permission denied /data/pulseops.db`)**:
+   - Kontainer berjalan dengan non-root user (`UID 10001`). Jika volume lokal gagal ditulisi:
+     ```bash
+     mkdir -p data && chown -R 10001:10001 data
+     ```
+3. **Target Mengembalikan SSL Error**:
+   - Engine prober memvalidasi sertifikat TLS publik secara default. Jika memantau layanan internal dengan *self-signed certificate*, sertifikat CA root institusi perlu disalin ke direktori `/usr/local/share/ca-certificates` pada tahap final Dockerfile.
+
 ---
 
 ## 10. Panduan Kontribusi & Standar Pengembang (Contributing Guide)

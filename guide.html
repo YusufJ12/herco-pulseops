@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>PulseOps - Buku Panduan Teknis & Operasional SRE / DevOps</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    @page {
+      size: A4;
+      margin: 16mm 14mm 16mm 14mm;
+      @bottom-right {
+        content: counter(page);
+        font-family: 'Inter', sans-serif;
+        font-size: 8pt;
+        color: #64748b;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #1e293b;
+      background: #ffffff;
+      line-height: 1.55;
+      font-size: 9.5pt;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Cover Page */
+    .cover {
+      page-break-after: always;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 40px 20px;
+    }
+
+    .cover-top {
+      border-top: 6px solid #2563eb;
+      padding-top: 30px;
+    }
+
+    .badge-label {
+      display: inline-block;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 8.5pt;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 20px;
+    }
+
+    .cover-title {
+      font-size: 32pt;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.15;
+      margin: 0 0 12px 0;
+      letter-spacing: -0.5px;
+    }
+
+    .cover-subtitle {
+      font-size: 13pt;
+      color: #475569;
+      font-weight: 400;
+      line-height: 1.4;
+      margin: 0 0 25px 0;
+      max-width: 650px;
+    }
+
+    .meta-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px 20px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .meta-item {
+      font-size: 8.5pt;
+    }
+    .meta-item strong {
+      display: block;
+      color: #64748b;
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+    .meta-item span {
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    .cover-bottom {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 8.5pt;
+      color: #64748b;
+    }
+
+    /* Headings */
+    h1, h2, h3, h4 {
+      color: #0f172a;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+
+    h2 {
+      font-size: 13pt;
+      border-bottom: 1.5px solid #e2e8f0;
+      padding-bottom: 6px;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      page-break-after: avoid;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h2::before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 16px;
+      background: #2563eb;
+      border-radius: 2px;
+    }
+
+    h3 {
+      font-size: 10.5pt;
+      margin-top: 16px;
+      margin-bottom: 8px;
+      color: #1e293b;
+      page-break-after: avoid;
+    }
+
+    h4 {
+      font-size: 9.5pt;
+      margin-top: 12px;
+      margin-bottom: 6px;
+      color: #334155;
+    }
+
+    p {
+      margin: 0 0 10px 0;
+      color: #334155;
+      text-align: justify;
+    }
+
+    ul, ol {
+      margin: 0 0 12px 0;
+      padding-left: 20px;
+      color: #334155;
+    }
+
+    li {
+      margin-bottom: 4px;
+    }
+
+    /* Code & Pre */
+    code {
+      font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+      font-size: 8.5pt;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 1.5px 5px;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+    }
+
+    pre {
+      font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 8pt;
+      line-height: 1.45;
+      overflow-x: auto;
+      margin: 10px 0 14px 0;
+      page-break-inside: avoid;
+      border: 1px solid #1e293b;
+    }
+
+    pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+      border: none;
+      font-size: inherit;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 16px 0;
+      font-size: 8.5pt;
+      page-break-inside: avoid;
+    }
+
+    th, td {
+      padding: 8px 10px;
+      text-align: left;
+      border: 1px solid #e2e8f0;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #0f172a;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 7.5pt;
+      letter-spacing: 0.5px;
+    }
+
+    tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    /* Callout Boxes */
+    .callout {
+      border-left: 3.5px solid #2563eb;
+      background: #f8fafc;
+      padding: 10px 14px;
+      margin: 12px 0;
+      border-radius: 0 6px 6px 0;
+      font-size: 8.5pt;
+      page-break-inside: avoid;
+    }
+
+    .callout-title {
+      font-weight: 700;
+      color: #1e40af;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .callout-success {
+      border-left-color: #10b981;
+      background: #f0fdf4;
+    }
+    .callout-success .callout-title {
+      color: #065f46;
+    }
+
+    .callout-warning {
+      border-left-color: #f59e0b;
+      background: #fffbeb;
+    }
+    .callout-warning .callout-title {
+      color: #92400e;
+    }
+
+    /* Architecture Flow Diagram */
+    .arch-diagram {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px;
+      margin: 14px 0;
+      text-align: center;
+      page-break-inside: avoid;
+    }
+
+    .arch-diagram svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* Page break helpers */
+    .page-break {
+      page-break-before: always;
+    }
+
+    .avoid-break {
+      page-break-inside: avoid;
+    }
+
+    /* Table of contents */
+    .toc {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 16px 0 24px 0;
+      page-break-inside: avoid;
+    }
+    .toc-title {
+      font-weight: 700;
+      font-size: 10.5pt;
+      margin-bottom: 10px;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .toc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 20px;
+      font-size: 8.5pt;
+    }
+    .toc-item {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dotted #cbd5e1;
+      padding-bottom: 2px;
+      color: #334155;
+    }
+    .toc-item span:first-child {
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== COVER PAGE ==================== -->
+  <div class="cover">
+    <div class="cover-top">
+      <span class="badge-label">DevOps & Site Reliability Engineering (SRE)</span>
+      <h1 class="cover-title">PulseOps 🩺</h1>
+      <div class="cover-subtitle">
+        Buku Panduan Komprehensif Arsitektur, Pengujian Otomatis, Orkestrasi Kubernetes Zero-Trust, SLO Google SRE, dan Handover Rekayasa
+      </div>
+
+      <div class="meta-box">
+        <div class="meta-item">
+          <strong>Penulis & Pengembang</strong>
+          <span>Yusuf Jaelani</span>
+        </div>
+        <div class="meta-item">
+          <strong>Target Pemantauan Utama</strong>
+          <span>portfolioyusufjaelani.vercel.app</span>
+        </div>
+        <div class="meta-item">
+          <strong>Teknologi Utama</strong>
+          <span>Go 1.23, Pure-Go SQLite, K8s, Prometheus, Grafana</span>
+        </div>
+        <div class="meta-item">
+          <strong>Versi Rilis & Lisensi</strong>
+          <span>v1.0.0 (Production Grade) &bull; MIT License</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cover-bottom">
+      <div>Repositori: <code>github.com/YusufJ12/herco-pulseops</code></div>
+      <div>Dokumen Resmi &bull; Confidential & Test Submission</div>
+    </div>
+  </div>
+
+  <!-- ==================== DAFTAR ISI ==================== -->
+  <div class="toc">
+    <div class="toc-title">Struktur Dokumen Panduan</div>
+    <div class="toc-grid">
+      <div class="toc-item"><span>1. Ikhtisar & Nilai Bisnis</span> <span>Hal 2</span></div>
+      <div class="toc-item"><span>2. Arsitektur & Alur Permintaan</span> <span>Hal 2</span></div>
+      <div class="toc-item"><span>3. Struktur Kode & Peta Berkas</span> <span>Hal 3</span></div>
+      <div class="toc-item"><span>4. Panduan Memulai Cepat</span> <span>Hal 3</span></div>
+      <div class="toc-item"><span>5. Pengujian Otomatis & DevSecOps</span> <span>Hal 4</span></div>
+      <div class="toc-item"><span>6. Task Runner (Makefile)</span> <span>Hal 4</span></div>
+      <div class="toc-item"><span>7. Referensi Environment Variables</span> <span>Hal 5</span></div>
+      <div class="toc-item"><span>8. Referensi API & Telemetri</span> <span>Hal 5</span></div>
+      <div class="toc-item"><span>9. Panduan Handover & Troubleshooting</span> <span>Hal 6</span></div>
+      <div class="toc-item"><span>10. Panduan Kontribusi & Standar PR</span> <span>Hal 7</span></div>
+      <div class="toc-item"><span>11. Keamanan & Pengerasan Produksi</span> <span>Hal 7</span></div>
+      <div class="toc-item"><span>12. Deployment K8s & Terraform</span> <span>Hal 8</span></div>
+    </div>
+  </div>
+
+  <!-- ==================== BAGIAN 1 & 2 ==================== -->
+  <h2>1. Ikhtisar & Nilai Bisnis</h2>
+  <p>
+    <strong>PulseOps</strong> dirancang khusus untuk memecahkan kesenjangan observabilitas pada arsitektur web modern (seperti Vercel, JAMStack, dan microservices). Banyak tim menghadapi situasi di mana edge CDN menyajikan cache kadaluwarsa, masa aktif sertifikat SSL habis tanpa peringatan, atau latensi jaringan meningkat tajam tanpa terdeteksi oleh dashboard konvensional.
+  </p>
+  <div class="callout callout-success">
+    <div class="callout-title">Karakteristik Kunci Sistem</div>
+    <ul>
+      <li><strong>Single Binary Statis:</strong> Web UI (Tailwind CSS + Chart.js) tersemat langsung di dalam binary Go via <code>//go:embed</code>. Tidak membutuhkan runtime Node.js atau reverse proxy tambahan.</li>
+      <li><strong>Portabilitas Tanpa CGO:</strong> Menggunakan pure-Go SQLite (<code>modernc.org/sqlite</code>) yang menghilangkan kebutuhan compiler GCC / C-libraries, menjamin portabilitas multi-arsitektur (AMD64 & ARM64).</li>
+      <li><strong>Observabilitas Standar Enterprise:</strong> Menyediakan metrik native OpenMetrics (<code>/metrics</code>), probe Kubernetes (<code>/healthz</code>, <code>/readyz</code>), serta aturan SLO / Error Budget Google SRE.</li>
+      <li><strong>Footprint Minimalis:</strong> Docker multi-stage menghasilkan image produksi berukuran hanya <strong>~8.5MB</strong> berjalan di bawah user non-root (<code>UID 10001</code>).</li>
+    </ul>
+  </div>
+
+  <h2>2. Arsitektur & Alur Permintaan</h2>
+  <p>
+    Secara operasional, PulseOps menjalankan loop prober goroutine otonom yang mengeksekusi handshake HTTP/TLS, mencatat header caching Vercel (<code>x-vercel-cache</code>), menghitung SLA ketersediaan, serta mengekspos metrik ke stack Prometheus dan Grafana.
+  </p>
+
+  <div class="arch-diagram">
+    <svg viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg" style="font-family: 'Inter', sans-serif;">
+      <!-- Background Box Container -->
+      <rect x="180" y="15" width="370" height="230" rx="8" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4 4" />
+      <text x="195" y="38" font-size="10" font-weight="700" fill="#475569">Container PulseOps (Alpine Linux, UID 10001)</text>
+
+      <!-- Target Node -->
+      <rect x="10" y="85" width="130" height="75" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5" />
+      <text x="75" y="110" font-size="11" font-weight="700" fill="#1d4ed8" text-anchor="middle">Portfolio Vercel</text>
+      <text x="75" y="128" font-size="8.5" fill="#3b82f6" text-anchor="middle">portfolioyusufjaelani</text>
+      <text x="75" y="140" font-size="8" fill="#60a5fa" text-anchor="middle">.vercel.app</text>
+
+      <!-- Prober Daemon -->
+      <rect x="200" y="55" width="150" height="60" rx="6" fill="#ffffff" stroke="#2563eb" stroke-width="1.5" />
+      <text x="275" y="80" font-size="10" font-weight="700" fill="#1e40af" text-anchor="middle">Prober Goroutine</text>
+      <text x="275" y="98" font-size="8.5" fill="#64748b" text-anchor="middle">Interval Ticker (30s)</text>
+
+      <!-- HTTP Server & API -->
+      <rect x="200" y="145" width="150" height="60" rx="6" fill="#ffffff" stroke="#059669" stroke-width="1.5" />
+      <text x="275" y="170" font-size="10" font-weight="700" fill="#065f46" text-anchor="middle">Go HTTP Server :8080</text>
+      <text x="275" y="188" font-size="8.5" fill="#64748b" text-anchor="middle">Embedded UI & REST API</text>
+
+      <!-- Database Node -->
+      <rect x="390" y="95" width="135" height="70" rx="6" fill="#ffffff" stroke="#d97706" stroke-width="1.5" />
+      <text x="457" y="123" font-size="10.5" font-weight="700" fill="#92400e" text-anchor="middle">SQLite Pure-Go</text>
+      <text x="457" y="142" font-size="8.5" fill="#64748b" text-anchor="middle">/data/pulseops.db</text>
+
+      <!-- Observability Stack -->
+      <rect x="585" y="85" width="165" height="75" rx="6" fill="#fdf4ff" stroke="#c026d3" stroke-width="1.5" />
+      <text x="667" y="112" font-size="11" font-weight="700" fill="#86198f" text-anchor="middle">Observability Stack</text>
+      <text x="667" y="130" font-size="8.5" fill="#a21caf" text-anchor="middle">Prometheus :9090</text>
+      <text x="667" y="144" font-size="8.5" fill="#a21caf" text-anchor="middle">Grafana Dashboard :3000</text>
+
+      <!-- Connection Lines -->
+      <path d="M 140 120 L 200 85" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow)" />
+      <path d="M 350 85 L 390 115" stroke="#64748b" stroke-width="1.5" />
+      <path d="M 350 175 L 390 145" stroke="#64748b" stroke-width="1.5" />
+      <path d="M 350 175 L 585 122" stroke="#c026d3" stroke-width="1.5" stroke-dasharray="3 3" />
+    </svg>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ==================== BAGIAN 3 & 4 ==================== -->
+  <h2>3. Struktur Kode & Peta Berkas</h2>
+  <p>Kode disusun mengikuti prinsip standar Go Project Layout yang bersih dan mudah dinavigasi:</p>
+  <pre><code>.
+├── .github/workflows/ci.yml    # CI/CD: gofmt, test coverage, Trivy scanner, GHCR multi-arch
+├── cmd/server/main.go          # Entrypoint aplikasi & penanganan graceful shutdown
+├── deploy/
+│   ├── grafana/provisioning/   # Provisioning otomatis datasource & dashboard SRE Grafana
+│   ├── k8s/                    # Manifests K8s (Deployment, Service, PVC, NetworkPolicy, Ingress)
+│   ├── prometheus/             # Aturan alert SRE & formula Google SRE SLO/Error Budget
+│   └── terraform/              # Declarative Infrastructure as Code (Docker container & volume)
+├── internal/
+│   ├── config/config.go        # Pengurai variabel lingkungan (PORT, DB_PATH, interval)
+│   ├── handler/                # Controller HTTP, /metrics exporter, /healthz, /readyz
+│   ├── model/target.go         # Domain model: Target, ProbeLog, TargetSummary
+│   ├── prober/prober.go        # Engine probing jaringan (HTTP latency, SSL handshake, CDN cache)
+│   └── store/store.go          # Database access layer SQLite pure-Go (DDL, cascade delete, SLA)
+├── web/                        # Antarmuka Single-Page Application (HTML, JS, Tailwind, Chart.js)
+├── Dockerfile                  # Multi-stage build aman (golang:1.23-alpine -> alpine:3.20)
+├── docker-compose.yml          # Orkestrasi lokal: PulseOps + Prometheus + Grafana
+├── Makefile                    # Automation runner untuk test, build, dan deployment
+└── README.md                   # Sumber kebenaran dokumentasi tunggal proyek</code></pre>
+
+  <h2>4. Panduan Memulai Cepat & Navigasi Antarmuka</h2>
+  <h3>A. Menjalankan via Docker Compose (Direkomendasikan)</h3>
+  <p>Cukup jalankan satu perintah untuk mengaktifkan seluruh ekosistem observabilitas:</p>
+  <pre><code>docker compose up -d --build</code></pre>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Layanan</th>
+        <th>URL Akses</th>
+        <th>Deskripsi & Cara Penggunaan</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Dashboard PulseOps</strong></td>
+        <td><code>http://localhost:8080</code></td>
+        <td>Antarmuka manusia visual (Tailwind CSS + Chart.js). Menampilkan status real-time, latensi, sisa hari sertifikat SSL, dan grafik interaktif.</td>
+      </tr>
+      <tr>
+        <td><strong>Prometheus UI</strong></td>
+        <td><code>http://localhost:9090</code></td>
+        <td>
+          Tampilan awal berstatus <em>"No data queried yet"</em>. Masukkan kueri PromQL (contoh: <code>pulseops_target_latency_ms</code>), lalu klik <strong>Execute</strong>. Periksa kesehatan target pada menu <code>Status &rarr; Targets</code>.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Grafana SRE</strong></td>
+        <td><code>http://localhost:3000</code></td>
+        <td>Terbuka langsung tanpa login. Dashboard <em>"PulseOps - Telemetry & Uptime Dashboard"</em> sudah terpasang otomatis (*pre-provisioned*) menyajikan 5 panel metrik live.</td>
+      </tr>
+      <tr>
+        <td><strong>Machine Probes</strong></td>
+        <td><code>/healthz</code> & <code>/readyz</code></td>
+        <td>Endpoint JSON (<code>{"status":"ok"}</code>) untuk pemeriksaan liveness/readiness otomatis oleh Kubernetes atau Load Balancer.</td>
+      </tr>
+      <tr>
+        <td><strong>Metrik OpenMetrics</strong></td>
+        <td><code>/metrics</code></td>
+        <td>Data telemetri berformat teks mentah untuk di-scrape oleh server Prometheus.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="page-break"></div>
+
+  <!-- ==================== BAGIAN 5 & 6 ==================== -->
+  <h2>5. Pengujian Otomatis & Pipeline DevSecOps CI/CD</h2>
+  <p>
+    Setiap commit yang didorong ke branch <code>main</code> memicu pipeline GitHub Actions (<code>.github/workflows/ci.yml</code>) yang terdiri dari tahapan verifikasi ketat:
+  </p>
+  <ul>
+    <li><strong>Code Quality Check:</strong> Memverifikasi bahwa sintaksis kode mematuhi standar <code>gofmt</code>.</li>
+    <li><strong>Automated Testing Suite:</strong> Menjalankan seluruh unit dan integration test mencakup <code>internal/store</code> (relasi SQLite, cascade delete), <code>internal/prober</code> (mock HTTP/TLS server, timeout boundary), dan <code>internal/handler</code> (REST API, exporter prometheus). Menghasilkan laporan cakupan kode (coverage).</li>
+    <li><strong>Docker Smoke Test:</strong> Membangun container dan menguji kesehatan endpoint <code>/healthz</code> di dalam runtime terisolasi.</li>
+    <li><strong>DevSecOps Vulnerability Scan (Aqua Trivy):</strong> Memindai image container dari kerentanan keamanan level <code>HIGH</code> dan <code>CRITICAL</code> sebelum diizinkan rilis.</li>
+    <li><strong>Multi-Architecture Continuous Delivery:</strong> Mengompilasi dan mempublikasikan image ke GitHub Container Registry (<code>ghcr.io/yusufj12/pulseops</code>) untuk arsitektur <code>linux/amd64</code> dan <code>linux/arm64</code>.</li>
+  </ul>
+
+  <div class="callout callout-warning">
+    <div class="callout-title">Cara Menjalankan Test Suite Secara Mandiri</div>
+    <p>Pengembang dapat memverifikasi pengujian tanpa menginstall Go di komputer lokal:</p>
+    <pre><code># Menggunakan task runner Makefile
+make test
+
+# Atau menggunakan Docker langsung
+docker run --rm -v "${PWD}:/app" -w /app golang:1.23-alpine go test -v ./...</code></pre>
+  </div>
+
+  <h2>6. Task Runner Pengembang (Makefile)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Perintah</th>
+        <th>Kegunaan</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>make test</code></td>
+        <td>Menjalankan seluruh pengujian unit & integrasi di container terisolasi.</td>
+      </tr>
+      <tr>
+        <td><code>make docker-build</code></td>
+        <td>Membangun image container produksi <code>pulseops:latest</code>.</td>
+      </tr>
+      <tr>
+        <td><code>make docker-compose-up</code></td>
+        <td>Membangun dan menjalankan stack lengkap (PulseOps + Prometheus + Grafana) di background.</td>
+      </tr>
+      <tr>
+        <td><code>make docker-compose-down</code></td>
+        <td>Menghentikan seluruh container stack.</td>
+      </tr>
+      <tr>
+        <td><code>make clean</code></td>
+        <td>Membersihkan container dan menghapus persistent volume database.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="page-break"></div>
+
+  <!-- ==================== BAGIAN 7 & 8 ==================== -->
+  <h2>7. Referensi Environment Variables</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Variable</th>
+        <th>Default</th>
+        <th>Wajib?</th>
+        <th>Deskripsi Operasional</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>PORT</code></td>
+        <td><code>8080</code></td>
+        <td>Tidak</td>
+        <td>Port HTTP server mendengarkan koneksi.</td>
+      </tr>
+      <tr>
+        <td><code>DB_PATH</code></td>
+        <td><code>/data/pulseops.db</code></td>
+        <td>Tidak</td>
+        <td>Path lokasi penyimpanan berkas persistent SQLite.</td>
+      </tr>
+      <tr>
+        <td><code>PROBE_INTERVAL_SECONDS</code></td>
+        <td><code>30</code></td>
+        <td>Tidak</td>
+        <td>Interval periodik eksekusi daemon prober latar belakang.</td>
+      </tr>
+      <tr>
+        <td><code>DEFAULT_TARGET_URL</code></td>
+        <td><code>https://portfolioyusufjaelani.vercel.app</code></td>
+        <td>Tidak</td>
+        <td>Target default yang otomatis di-seed saat basis data pertama kali dibuat.</td>
+      </tr>
+      <tr>
+        <td><code>DEFAULT_TARGET_NAME</code></td>
+        <td><code>Yusuf Portfolio</code></td>
+        <td>Tidak</td>
+        <td>Label nama deskriptif untuk target default.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>8. Referensi REST API, Alerting & Google SRE SLO</h2>
+  <h3>A. REST API Endpoints</h3>
+  <ul>
+    <li><code>GET /api/targets</code>: Mengambil daftar seluruh endpoint yang dipantau beserta ringkasan SLA dan probe terkini.</li>
+    <li><code>POST /api/targets</code>: Mendaftarkan target baru (menerima payload JSON <code>{"name":"...","url":"..."}</code>).</li>
+    <li><code>DELETE /api/targets/{id}</code>: Menghapus target beserta seluruh riwayat log-nya secara bersih (cascade).</li>
+    <li><code>POST /api/targets/{id}/probe</code>: Memicu pemeriksaan jaringan secara instan tanpa menunggu interval daemon.</li>
+    <li><code>GET /api/targets/{id}/history?limit=30</code>: Mengambil data historis latensi untuk visualisasi grafik.</li>
+  </ul>
+
+  <h3>B. Aturan Alerting SRE (`deploy/prometheus/alert.rules.yml`)</h3>
+  <ul>
+    <li><strong>TargetDown (Critical):</strong> Memicu insiden saat <code>pulseops_target_up == 0</code> selama lebih dari 1 menit.</li>
+    <li><strong>HighLatencyWarning (Warning):</strong> Memicu peringatan saat <code>pulseops_target_latency_ms &gt; 1000ms</code> selama 2 menit.</li>
+    <li><strong>SSLExpirationWarning & Critical:</strong> Peringatan dini saat masa aktif sertifikat SSL <code>&lt; 14 hari</code> atau <code>&lt; 3 hari</code>.</li>
+  </ul>
+
+  <h3>C. Standar Google SRE SLO & Error Budget (`deploy/prometheus/slo.rules.yml`)</h3>
+  <ul>
+    <li><strong>SLI Ketersediaan:</strong> <code>pulseops:target_uptime_ratio:rate1h</code> mengukur rasio uptime aktual bergulir.</li>
+    <li><strong>Error Budget Burn Rate:</strong> Menghitung laju konsumsi anggaran kegagalan berdasarkan target SLO <strong>99.9%</strong>.</li>
+    <li><strong>ErrorBudgetFastBurn (Critical):</strong> Mengeskalasi insiden darurat saat error budget terbakar lebih dari <code>14.4x</code> laju normal.</li>
+  </ul>
+
+  <div class="page-break"></div>
+
+  <!-- ==================== BAGIAN 9 ==================== -->
+  <h2>9. Panduan untuk Engineer Penerus (Handover & Troubleshooting)</h2>
+  
+  <h3>A. Rasional Arsitektur Pure-Go SQLite</h3>
+  <p>
+    Keputusan memilih driver <code>modernc.org/sqlite</code> alih-alih driver berbasis CGO (seperti <code>mattn/go-sqlite3</code>) didasarkan pada pertimbangan rekayasa keandalan:
+  </p>
+  <ul>
+    <li>Memungkinkan binary dikompilasi dengan bendera <code>CGO_ENABLED=0</code> statis penuh tanpa ketergantungan pada <code>glibc</code> / <code>musl</code>.</li>
+    <li>Dapat berjalan mulus di container Alpine minimalis tanpa perlu memasang paket <code>build-base</code> atau compiler GCC.</li>
+    <li>Menghindari kerentanan keamanan memori tingkat C pada pustaka host.</li>
+  </ul>
+
+  <h3>B. Panduan Menambahkan Metrik Baru (Contoh: Time to First Byte / TTFB)</h3>
+  <ol>
+    <li><strong>Domain Model:</strong> Tambahkan kolom <code>TTFBMs int64</code> pada struct <code>ProbeLog</code> di <code>internal/model/target.go</code>.</li>
+    <li><strong>Database:</strong> Perbarui skema DDL tabel <code>probe_logs</code> pada metode <code>InitDB</code> di <code>internal/store/store.go</code>.</li>
+    <li><strong>Prober Engine:</strong> Pasang <code>httptrace.ClientTrace</code> pada HTTP request di <code>internal/prober/prober.go</code> untuk mencatat waktu durasi <code>GotFirstResponseByte</code>.</li>
+    <li><strong>Exporter:</strong> Daftarkan gauge baru <code>pulseops_target_ttfb_ms</code> di fungsi <code>handleMetrics</code> pada <code>internal/handler/handler.go</code>.</li>
+    <li><strong>Visualisasi:</strong> Tambahkan komponen bar/chart pada <code>web/app.js</code> dan <code>web/index.html</code>.</li>
+  </ol>
+
+  <h3>C. Panduan Integrasi Alert Webhook (Discord / Slack / Telegram)</h3>
+  <ol>
+    <li>Tambahkan field konfigurasi <code>ALERT_WEBHOOK_URL</code> di <code>internal/config/config.go</code>.</li>
+    <li>Pada <code>internal/prober/prober.go</code>, bandingkan status probe saat ini dengan status log sebelumnya (deteksi transisi <code>UP &rarr; DOWN</code> atau <code>DOWN &rarr; UP</code>).</li>
+    <li>Jika terjadi transisi status, picu goroutine asinkron untuk mengirim HTTP POST payload JSON ke webhook URL.</li>
+  </ol>
+
+  <h3>D. Panduan Pemecahan Masalah Umum (Troubleshooting)</h3>
+  <div class="callout callout-warning">
+    <div class="callout-title">Daftar Solusi Isu Operasional</div>
+    <ol>
+      <li><strong>Port Konflik (<code>address already in use: 8080/9090/3000</code>):</strong> Ubah pemetaan port host pada <code>docker-compose.yml</code> (contoh: <code>"8081:8080"</code>).</li>
+      <li><strong>Permission Denied pada Volume SQLite (<code>/data/pulseops.db</code>):</strong> Container berjalan dengan non-root <code>UID 10001</code>. Pastikan direktori lokal memiliki hak akses: <code>mkdir -p data && chown -R 10001:10001 data</code>.</li>
+      <li><strong>Prometheus Menampilkan <em>"No data queried yet"</em>:</strong> Ini adalah status normal saat kolom kueri kosong. Masukkan ekspresi PromQL (misal: <code>pulseops_target_latency_ms</code>) lalu klik tombol <strong>Execute</strong>.</li>
+      <li><strong>Grafana Sempat Menampilkan <em>"No data"</em>:</strong> Pastikan berkas <code>datasource.yml</code> memiliki konfigurasi <code>uid: prometheus</code>. Jalankan <code>docker compose restart grafana</code> dan refresh peramban (F5).</li>
+    </ol>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ==================== BAGIAN 10 & 11 ==================== -->
+  <h2>10. Panduan Kontribusi & Standar Pengembang</h2>
+  <p>Untuk menjaga integritas dan kebersihan repositori, setiap kontributor wajib mematuhi standar berikut:</p>
+  <ul>
+    <li><strong>Prinsip YAGNI & Boring Code:</strong> Jangan menambahkan dependensi pihak ketiga untuk tugas yang dapat diselesaikan oleh pustaka standar Go (<code>net/http</code>, <code>crypto/tls</code>, <code>log/slog</code>).</li>
+    <li><strong>Format Pesan Commit Terstruktur (Conventional Commits):</strong>
+      <ul>
+        <li><code>feat: ...</code> &bull; Penambahan fitur operasional baru</li>
+        <li><code>fix: ...</code> &bull; Perbaikan bug / isu kestabilan</li>
+        <li><code>refactor: ...</code> &bull; Penyempurnaan kode tanpa mengubah fungsi bisnis</li>
+        <li><code>docs: ...</code> &bull; Pembaruan dokumentasi atau panduan teknis</li>
+        <li><code>test: ...</code> &bull; Penambahan cakupan pengujian unit/integrasi</li>
+      </ul>
+    </li>
+    <li><strong>Checklist Wajib Sebelum Mengajukan Pull Request:</strong>
+      <ol>
+        <li>Seluruh test otomatis lulus 100%: <code>make test</code></li>
+        <li>Format kode rapi sesuai standar Go: <code>go fmt ./...</code></li>
+        <li>Image Docker berhasil dibangun tanpa error: <code>make docker-build</code></li>
+        <li>Tidak ada credential hardcoded atau tautan localhost statis pada tampilan antarmuka.</li>
+        <li>Analisis SonarLint menghasilkan <strong>0 Code Smells / 0 Warnings</strong>.</li>
+      </ol>
+    </li>
+  </ul>
+
+  <h2>11. Keamanan & Pengerasan Produksi (Security Hardening)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Vektor Keamanan</th>
+        <th>Implementasi Teknis</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Non-Root Execution</strong></td>
+        <td>Container beroperasi di bawah user non-privileged <code>appuser:appgroup</code> dengan <code>UID:GID 10001:10001</code>. Hak istimewa root sepenuhnya ditiadakan.</td>
+      </tr>
+      <tr>
+        <td><strong>Graceful Shutdown</strong></td>
+        <td>Aplikasi menangkap sinyal sistem operasi <code>SIGINT</code> dan <code>SIGTERM</code> menggunakan batas waktu <code>context.WithTimeout(5s)</code> untuk memastikan koneksi HTTP aktif diselesaikan dan transaksi SQLite di-flush secara aman.</td>
+      </tr>
+      <tr>
+        <td><strong>Client Timeout Boundaries</strong></td>
+        <td>Prober jaringan dikonfigurasi dengan batas waktu ketat 10 detik dan batas redirect maksimal 5 hops untuk mencegah serangan Denial of Service (DoS) dan kebocoran goroutine.</td>
+      </tr>
+      <tr>
+        <td><strong>Automount Token Disabled</strong></td>
+        <td>Pada manifest Kubernetes, <code>automountServiceAccountToken</code> disetel ke <code>false</code> guna mencegah serangan pencurian token akses cluster API dari dalam pod.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="page-break"></div>
+
+  <!-- ==================== BAGIAN 12 & 13 ==================== -->
+  <h2>12. Panduan Deployment Kubernetes, Terraform & Cloud</h2>
+
+  <h3>A. Kubernetes GitOps via Kustomize (Zero-Trust Security)</h3>
+  <p>Manifests siap produksi telah tersedia di direktori <code>deploy/k8s/</code> dengan isolasi jaringan Zero-Trust:</p>
+  <pre><code># 1. Pratinjau resource yang digenerate oleh Kustomize
+kubectl kustomize deploy/k8s
+
+# 2. Terapkan seluruh manifest ke cluster
+kubectl apply -k deploy/k8s
+
+# 3. Verifikasi status pod, service, network policy, dan ingress
+kubectl get pods,svc,networkpolicy,ingress -n pulseops</code></pre>
+
+  <div class="callout callout-success">
+    <div class="callout-title">Spesifikasi Zero-Trust NetworkPolicy (`deploy/k8s/networkpolicy.yaml`)</div>
+    <p>
+      Mengisolasi perimeter jaringan pod secara ketat: lalu lintas masuk (Ingress) hanya diizinkan pada port 8080, sedangkan lalu lintas keluar (Egress) dibatasi secara eksklusif hanya ke port 53 (DNS UDP/TCP) dan port 80/443 (HTTP/HTTPS) untuk keperluan probe target eksternal.
+    </p>
+  </div>
+
+  <h3>B. Provisioning Deklaratif Menggunakan Terraform (IaC)</h3>
+  <p>Konfigurasi Terraform di <code>deploy/terraform/</code> mengotomatiskan provisioning container dan persistent storage:</p>
+  <pre><code>cd deploy/terraform
+terraform init
+terraform plan
+terraform apply -auto-approve</code></pre>
+
+  <h3>C. Deployment Cloud Publik Gratis (Render.com / PaaS)</h3>
+  <ol>
+    <li>Push repositori ke GitHub.</li>
+    <li>Buka dashboard <strong>Render.com</strong> &rarr; klik <strong>New +</strong> &rarr; pilih <strong>Web Service</strong>.</li>
+    <li>Hubungkan dengan repositori ini. Render akan otomatis mendeteksi <code>Dockerfile</code> multi-stage.</li>
+    <li>Pilih Free Plan dan klik <strong>Create Web Service</strong>. Layanan akan aktif dalam ~2 menit dengan domain HTTPS gratis dan sertifikat SSL terkelola.</li>
+  </ol>
+
+  <h2>13. Pernyataan Kolaborasi AI & Vibe Coding</h2>
+  <p>
+    Proyek ini dibangun melalui sinergi intensif antara insinyur manusia dan asisten kecerdasan buatan (<strong>GitHub Copilot / Vibe Coding</strong>). AI dimanfaatkan secara efektif untuk mengakselerasi scaffolding pola SRE cloud-native, perancangan manifest Kubernetes deklaratif, dan pembuatan mock test suite. Setiap artefak kode diverifikasi secara ketat melalui audit keamanan dan standar industri untuk menghasilkan perangkat lunak yang tangguh, aman, dan siap produksi.
+  </p>
+
+</body>
+</html>

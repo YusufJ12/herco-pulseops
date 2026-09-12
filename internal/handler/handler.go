@@ -14,6 +14,8 @@ import (
 	"github.com/yusufjaelani/pulseops/internal/store"
 )
 
+const errInvalidTargetID = "invalid target id"
+
 type Handler struct {
 	store  *store.Store
 	prober *prober.Prober
@@ -182,7 +184,7 @@ func (h *Handler) handleDeleteTarget(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid target id"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": errInvalidTargetID})
 		return
 	}
 
@@ -198,7 +200,7 @@ func (h *Handler) handleManualProbe(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid target id"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": errInvalidTargetID})
 		return
 	}
 
@@ -221,7 +223,7 @@ func (h *Handler) handleTargetHistory(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid target id"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": errInvalidTargetID})
 		return
 	}
 

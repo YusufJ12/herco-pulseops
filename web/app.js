@@ -56,102 +56,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let totalUptime = 0;
     let allUp = true;
 
-    targetsList.innerHTML = summaries.map(s => {
+    for (const s of summaries) {
       const p = s.last_probe;
-      const isUp = p ? p.is_up : false;
-      const statusCode = p ? p.status_code : 0;
-      const latency = p ? p.latency_ms : 0;
-      const sslDays = p ? p.ssl_expiry_days : 0;
-      const uptime = s.uptime_percent.toFixed(1);
-
       if (p) {
-        totalLat += latency;
+        totalLat += p.latency_ms;
         countedLat++;
-        if (!isUp) allUp = false;
+        if (!p.is_up) allUp = false;
       }
       totalUptime += s.uptime_percent;
+    }
 
-      // Parse headers
-      let headersObj = {};
-      if (p && p.headers) {
-        try { headersObj = JSON.parse(p.headers); } catch (_) {}
-      }
-
-      const vercelCache = headersObj['x-vercel-cache'] || '';
-      const serverHeader = headersObj['server'] || '';
-
-      // Latency color
-      let latColor = 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10';
-      if (latency > 500) latColor = 'text-amber-400 border-amber-500/30 bg-amber-500/10';
-      if (latency > 1500 || !isUp) latColor = 'text-rose-400 border-rose-500/30 bg-rose-500/10';
-
-      return `
-        <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition">
-          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            
-            <!-- Left Info -->
-            <div class="flex items-start gap-4">
-              <div class="mt-1">
-                ${isUp 
-                  ? '<span class="flex h-3.5 w-3.5 relative"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500"></span></span>' 
-                  : '<span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-500"></span>'
-                }
-              </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <h3 class="font-bold text-white text-base">${escapeHtml(s.target.name)}</h3>
-                  <span class="text-xs font-mono px-2 py-0.5 rounded ${isUp ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'} font-semibold">
-                    ${isUp ? (statusCode > 0 ? `HTTP ${statusCode}` : 'UP') : (statusCode > 0 ? `HTTP ${statusCode}` : 'DOWN')}
-                  </span>
-                  ${vercelCache ? `<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-900/40 text-sky-300 border border-sky-800">Vercel: ${vercelCache}</span>` : ''}
-                </div>
-                
-                <a href="${escapeHtml(s.target.url)}" target="_blank" class="text-xs font-mono text-slate-400 hover:text-emerald-400 transition flex items-center gap-1 mt-1">
-                  ${escapeHtml(s.target.url)} <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
-                </a>
-
-                ${p && p.error_msg && !isUp ? `<div class="text-xs text-rose-400 mt-2 font-mono"><i class="fa-solid fa-circle-exclamation mr-1"></i>${escapeHtml(p.error_msg)}</div>` : ''}
-              </div>
-            </div>
-
-            <!-- Telemetry Metrics & Actions -->
-            <div class="flex flex-wrap items-center gap-4 text-xs font-mono">
-              <!-- Latency -->
-              <div class="px-3 py-1.5 rounded-lg border ${latColor} flex items-center gap-1.5">
-                <i class="fa-solid fa-bolt text-[11px]"></i>
-                <span>${latency} ms</span>
-              </div>
-
-              <!-- SSL Expiry -->
-              ${sslDays > 0 ? `
-                <div class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/60 text-slate-300 flex items-center gap-1.5">
-                  <i class="fa-solid fa-shield-halved text-emerald-400 text-[11px]"></i>
-                  <span>SSL: ${sslDays}d</span>
-                </div>
-              ` : ''}
-
-              <!-- Uptime SLA -->
-              <div class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/60 text-slate-300 flex items-center gap-1.5">
-                <i class="fa-solid fa-chart-pie text-sky-400 text-[11px]"></i>
-                <span>SLA: ${uptime}%</span>
-              </div>
-
-              <!-- Actions -->
-              <div class="flex items-center gap-2">
-                <button onclick="window.triggerProbe(${s.target.id})" title="Instant Probe" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-emerald-400 rounded-lg transition border border-slate-700">
-                  <i class="fa-solid fa-play text-xs"></i>
-                </button>
-                <button onclick="window.deleteTarget(${s.target.id})" title="Remove Monitor" class="p-2 bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 rounded-lg transition border border-slate-700">
-                  <i class="fa-regular fa-trash-can text-xs"></i>
-                </button>
-              </div>
-
-            </div>
-
-          </div>
-        </div>
-      `;
-    }).join('');
+    targetsList.innerHTML = summaries.map(renderTargetCard).join('');
 
     const avgLat = countedLat > 0 ? Math.round(totalLat / countedLat) : 0;
     const avgUptime = summaries.length > 0 ? (totalUptime / summaries.length).toFixed(1) : 100;
@@ -349,15 +264,117 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initial load & periodic poll
   loadTargets();
   setInterval(loadTargets, 15000);
-
-  function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>"']/g, m => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    }[m]));
-  }
 });
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/[&<>"']/g, m => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[m]));
+}
+
+function getStatusBadge(isUp, statusCode) {
+  if (statusCode > 0) {
+    return `HTTP ${statusCode}`;
+  }
+  return isUp ? 'UP' : 'DOWN';
+}
+
+function getLatencyBadgeClass(latency, isUp) {
+  if (latency > 1500 || !isUp) {
+    return 'text-rose-400 border-rose-500/30 bg-rose-500/10';
+  }
+  if (latency > 500) {
+    return 'text-amber-400 border-amber-500/30 bg-amber-500/10';
+  }
+  return 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10';
+}
+
+function renderTargetCard(s) {
+  const p = s.last_probe;
+  const isUp = Boolean(p?.is_up);
+  const statusCode = p?.status_code ?? 0;
+  const latency = p?.latency_ms ?? 0;
+  const sslDays = p?.ssl_expiry_days ?? 0;
+  const uptime = s.uptime_percent.toFixed(1);
+
+  let headersObj = {};
+  if (p?.headers) {
+    try { headersObj = JSON.parse(p.headers); } catch (_) {}
+  }
+
+  const vercelCache = headersObj['x-vercel-cache'] || '';
+  const latColor = getLatencyBadgeClass(latency, isUp);
+  const statusBadge = getStatusBadge(isUp, statusCode);
+
+  return `
+    <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        
+        <!-- Left Info -->
+        <div class="flex items-start gap-4">
+          <div class="mt-1">
+            ${isUp 
+              ? '<span class="flex h-3.5 w-3.5 relative"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500"></span></span>' 
+              : '<span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-500"></span>'
+            }
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-white text-base">${escapeHtml(s.target.name)}</h3>
+              <span class="text-xs font-mono px-2 py-0.5 rounded ${isUp ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'} font-semibold">
+                ${statusBadge}
+              </span>
+              ${vercelCache ? `<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-900/40 text-sky-300 border border-sky-800">Vercel: ${vercelCache}</span>` : ''}
+            </div>
+            
+            <a href="${escapeHtml(s.target.url)}" target="_blank" class="text-xs font-mono text-slate-400 hover:text-emerald-400 transition flex items-center gap-1 mt-1">
+              ${escapeHtml(s.target.url)} <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+            </a>
+
+            ${p?.error_msg && !isUp ? `<div class="text-xs text-rose-400 mt-2 font-mono"><i class="fa-solid fa-circle-exclamation mr-1"></i>${escapeHtml(p.error_msg)}</div>` : ''}
+          </div>
+        </div>
+
+        <!-- Telemetry Metrics & Actions -->
+        <div class="flex flex-wrap items-center gap-4 text-xs font-mono">
+          <!-- Latency -->
+          <div class="px-3 py-1.5 rounded-lg border ${latColor} flex items-center gap-1.5">
+            <i class="fa-solid fa-bolt text-[11px]"></i>
+            <span>${latency} ms</span>
+          </div>
+
+          <!-- SSL Expiry -->
+          ${sslDays > 0 ? `
+            <div class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/60 text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-shield-halved text-emerald-400 text-[11px]"></i>
+              <span>SSL: ${sslDays}d</span>
+            </div>
+          ` : ''}
+
+          <!-- Uptime SLA -->
+          <div class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/60 text-slate-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-chart-pie text-sky-400 text-[11px]"></i>
+            <span>SLA: ${uptime}%</span>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center gap-2">
+            <button onclick="window.triggerProbe(${s.target.id})" title="Instant Probe" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-emerald-400 rounded-lg transition border border-slate-700">
+              <i class="fa-solid fa-play text-xs"></i>
+            </button>
+            <button onclick="window.deleteTarget(${s.target.id})" title="Remove Monitor" class="p-2 bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 rounded-lg transition border border-slate-700">
+              <i class="fa-regular fa-trash-can text-xs"></i>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  `;
+}

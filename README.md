@@ -2,7 +2,7 @@
 > **Cloud-Native Uptime Monitor & Service Health Probe**  
 > Lightweight, resilient, single-binary SRE telemetry daemon built with Go, SQLite, and embedded Web UI.
 
-[![CI / CD Pipeline](https://github.com/yusufjaelani/pulseops/actions/workflows/ci.yml/badge.svg)](https://github.com/yusufjaelani/pulseops/actions)
+[![CI / CD Pipeline](https://github.com/YusufJ12/herco-pulseops/actions/workflows/ci.yml/badge.svg)](https://github.com/YusufJ12/herco-pulseops/actions)
 [![Docker Image Size](https://img.shields.io/badge/docker%20image-<15MB-blue.svg)](Dockerfile)
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](LICENSE)
 

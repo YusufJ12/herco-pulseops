@@ -24,15 +24,11 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
 # ==========================================
 FROM alpine:3.20
 
-# Install CA certificates for HTTPS probing and tzdata for timestamps
-RUN apk --no-cache add ca-certificates tzdata
-
-# Create dedicated non-root user & group (Principle of Least Privilege)
-RUN addgroup -g 10001 -S appgroup && \
-    adduser -u 10001 -S appuser -G appgroup
-
-# Create persistent data directory with correct ownership
-RUN mkdir -p /data && chown -R appuser:appgroup /data
+# Install CA certificates, tzdata, create dedicated non-root user, and prepare data directory
+RUN apk --no-cache add ca-certificates tzdata && \
+    addgroup -g 10001 -S appgroup && \
+    adduser -u 10001 -S appuser -G appgroup && \
+    mkdir -p /data && chown -R appuser:appgroup /data
 
 WORKDIR /app
 

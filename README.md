@@ -130,7 +130,47 @@ DB_PATH=./pulseops.db PORT=8080 go run ./cmd/server
 
 ---
 
-## 5. Task Runner Pengembang (`Makefile`)
+## 5. Pengujian Otomatis & Pipeline CI/CD (Automated Testing)
+
+PulseOps mengimplementasikan strategi pengujian otomatis menyeluruh untuk menjamin keandalan sistem SRE:
+
+### A. Cakupan Unit & Integration Test
+- **`internal/store/store_test.go`**:
+  - Inisialisasi skema DDL SQLite pure-Go dan integritas foreign key.
+  - Penyimpanan target dan pencatatan log telemetri probe.
+  - Kalkulasi persentase SLA uptime berjalan.
+  - Uji *cascade delete*: memastikan penghapusan target membersihkan riwayat log terkait tanpa menyisakan *orphan record*.
+- **`internal/prober/prober_test.go`**:
+  - Pengujian probe HTTP terhadap mock server (skenario sukses `HTTP 200` vs skenario kegagalan `HTTP 500`).
+  - Validasi ketat format URL (skema `http`/`https`, host valid vs skema ilegal).
+  - Pengujian batas waktu jaringan (*timeout boundary*).
+- **`internal/handler/handler_test.go`**:
+  - Validasi endpoint Kubernetes `/healthz` dan `/readyz`.
+  - Endpoint REST API pembuatan target (`POST /api/targets`) dan daftar ringkasan (`GET /api/targets`).
+  - Validasi struktur output metrik teks eksporter Prometheus (`/metrics`).
+
+### B. Otomasi di CI/CD (GitHub Actions)
+Setiap kali ada `push` atau `Pull Request` ke branch `main`, workflow `.github/workflows/ci.yml` secara otomatis mengeksekusi:
+1. **Pemeriksaan Format (`gofmt`)**: Memastikan konsistensi gaya kode standar Go.
+2. **Eksekusi Test & Coverage**: Menjalankan seluruh test suite dan menghasilkan laporan coverage (`go test -v -coverprofile=coverage.txt`).
+3. **Docker Build Smoke Test**: Menguji proses kompilasi container multi-stage dan memverifikasi kesehatan liveness probe `/healthz`.
+
+### C. Menjalankan Test Sendiri Secara Mandiri
+Pilih salah satu cara berikut:
+```bash
+# Cara 1: Menggunakan Makefile (Otomatis via container terisolasi)
+make test
+
+# Cara 2: Menggunakan Docker langsung (tanpa perlu install Go di komputer)
+docker run --rm -v "${PWD}:/app" -w /app golang:1.23-alpine go test -v ./...
+
+# Cara 3: Menggunakan CLI Go lokal (jika Go terpasang)
+go test -v ./...
+```
+
+---
+
+## 6. Task Runner Pengembang (`Makefile`)
 
 Tersedia target `make` untuk standarisasi proses development tim:
 
@@ -222,10 +262,15 @@ Alih-alih driver CGO seperti `mattn/go-sqlite3` yang memerlukan GCC, pustaka C, 
 
 ### Cara Menambahkan Metrik Baru (Contoh: Time to First Byte / TTFB)
 1. **Model:** Buka `internal/model/target.go`, tambahkan field `TTFBMs int64` pada struct `ProbeLog`.
-2. **Database:** Tambahkan kolom pada tabel `probe_logs` di `internal/store/store.go`.
+2. **Database:** Tambahkan kolom pada tabel `probe_logs` di `internal/store/store.go` (`InitDB`).
 3. **Probing Engine:** Gunakan `httptrace.ClientTrace` pada `internal/prober/prober.go` untuk mencatat durasi `GotFirstResponseByte`.
 4. **Prometheus Exporter:** Tambahkan gauge `pulseops_target_ttfb_ms` pada fungsi `handleMetrics` di `internal/handler/handler.go`.
-5. **Frontend:** Tambahkan label telemetri baru pada `web/app.js`.
+5. **Frontend:** Tambahkan label telemetri baru pada `web/app.js` dan `web/index.html`.
+
+### Cara Menambahkan Notifikasi Alert Webhook (Contoh: Discord / Telegram / Slack)
+1. Daftarkan variabel `ALERT_WEBHOOK_URL` di `internal/config/config.go`.
+2. Di `internal/prober/prober.go`, deteksi perubahan status target (misalnya status sebelumnya `UP`, status saat ini menjadi `DOWN`).
+3. Kirim payload HTTP POST ke webhook URL secara asinkron menggunakan goroutine non-blocking.
 
 ### Cara Menginspeksi Database SQLite di Container
 ```bash
@@ -235,16 +280,41 @@ docker compose exec pulseops /bin/sh -c "ls -lh /data"
 
 ---
 
-## 9. Keamanan & Pengerasan Produksi (Security Hardening)
+## 9. Standar Kode & Panduan Kontribusi
 
-- **Non-Root Execution:** Kontainer berjalan di bawah user `appuser:appgroup` (`UID 10001`). Proses tidak memiliki hak akses root.
-- **Graceful Shutdown:** `cmd/server/main.go` menangani sinyal OS `SIGINT` dan `SIGTERM` dengan `context.WithTimeout(5s)`, memastikan koneksi aktif diselesaikan dan database di-flush sebelum proses keluar.
-- **Strict Client Timeout:** Prober menggunakan timeout ketat (10 detik) dan batas redirect maksimal 5 hops untuk mencegah DoS / kebocoran goroutine pada target lambat.
-- **SonarLint Zero Code Smells:** Seluruh kode Go, HTML, dan JavaScript telah diverifikasi bersih dari issue SonarLint (cognitive complexity < 15, zero label warnings, clean scoping).
+Semua panduan kontribusi disatukan di sini agar engineer dapat langsung berkontribusi:
+
+### Standar Kualitas (Zero-Warning)
+- Wajib memformat kode Go: `go fmt ./...`
+- Wajib memastikan 0 issue pada SonarLint / SonarQube (cognitive complexity < 15, valid HTML labels, clean scoping).
+- Tidak menggunakan credential rahasia atau tautan localhost di tampilan produksi.
+
+### Format Commit (Conventional Commits)
+Gunakan format pesan commit standar:
+- `feat: ...` untuk fitur baru
+- `fix: ...` untuk perbaikan bug
+- `refactor: ...` untuk restrukturisasi kode
+- `docs: ...` untuk pembaruan dokumentasi
+- `test: ...` untuk penambahan unit/integration test
+
+### Checklist Sebelum Membuka Pull Request
+- [ ] Pengujian otomatis lulus 100%: `make test`
+- [ ] Format kode rapi: `go fmt ./...`
+- [ ] Image Docker berhasil di-build: `make docker-build`
+- [ ] Tidak ada warning linter aktif di IDE.
 
 ---
 
-## 10. Panduan Deployment Cloud (Render.com / PaaS)
+## 10. Keamanan & Pengerasan Produksi (Security Hardening)
+
+- **Non-Root Execution:** Kontainer berjalan di bawah user `appuser:appgroup` (`UID 10001`). Proses tidak memiliki hak akses root di dalam container.
+- **Graceful Shutdown:** `cmd/server/main.go` menangani sinyal OS `SIGINT` dan `SIGTERM` dengan `context.WithTimeout(5s)`, memastikan koneksi aktif diselesaikan dan database di-flush sebelum proses keluar.
+- **Strict Client Timeout:** Prober menggunakan timeout ketat (10 detik) dan batas redirect maksimal 5 hops untuk mencegah DoS / kebocoran goroutine pada target lambat.
+- **SonarLint Zero Code Smells:** Seluruh kode Go, HTML, dan JavaScript telah diverifikasi bersih dari issue SonarLint.
+
+---
+
+## 11. Panduan Deployment Cloud (Render.com / PaaS)
 
 Aplikasi ini siap di-deploy langsung ke platform cloud gratis seperti **Render.com** tanpa memerlukan VPS:
 
@@ -258,47 +328,7 @@ Aplikasi ini siap di-deploy langsung ke platform cloud gratis seperti **Render.c
 
 ---
 
-## 11. Pernyataan Kolaborasi AI & Vibe Coding
-
-Proyek ini dirancang dan dikembangkan dengan memanfaatkan integrasi **GitHub Copilot (AI / Vibe Coding)**:
-- **Arsitektur Cepat & Tepat:** AI digunakan untuk mempercepat scaffolding pola SRE cloud-native, penyusunan Docker multi-stage, dan pembuatan mock test suite.
-- **Verifikasi Kualitas Ketat:** Setiap output diverifikasi terhadap standar keamanan SRE (user non-root, CGO disabled, timeout boundaries, dan kepatuhan SonarQube).
-- **Human-in-the-Loop:** Keputusan desain (pemilihan pure-Go SQLite, embedded Chart.js, penghapusan ketergantungan link localhost) diambil secara terarah untuk menghasilkan produk siap produksi yang mudah dirawat oleh engineer mana pun.
-4. **Prometheus Exporter:** Tambahkan gauge `pulseops_target_ttfb_ms` pada fungsi `handleMetrics` di `internal/handler/handler.go`.
-5. **Frontend:** Tambahkan label telemetri baru pada `web/app.js`.
-
-### Cara Menginspeksi Database SQLite di Container
-```bash
-# Query langsung ke database SQLite di dalam volume
-docker compose exec pulseops /bin/sh -c "ls -lh /data"
-```
-
----
-
-## 9. Security & Production Hardening
-
-- **Non-Root Execution:** Kontainer berjalan di bawah user `appuser:appgroup` (`UID 10001`). Proses tidak memiliki hak akses root.
-- **Graceful Shutdown:** `cmd/server/main.go` menangani sinyal OS `SIGINT` dan `SIGTERM` dengan `context.WithTimeout(5s)`, memastikan koneksi aktif diselesaikan dan database di-flush sebelum proses keluar.
-- **Strict Client Timeout:** Prober menggunakan timeout ketat (10 detik) dan batas redirect maksimal 5 hops untuk mencegah DoS / kebocoran goroutine pada target lambat.
-- **SonarLint Zero Code Smells:** Seluruh kode Go, HTML, dan JavaScript telah diverifikasi bersih dari issue SonarLint (cognitive complexity < 15, zero label warnings, clean scoping).
-
----
-
-## 10. Panduan Deployment Cloud (Render.com / PaaS)
-
-Aplikasi ini siap di-deploy langsung ke platform cloud gratis seperti **Render.com** tanpa memerlukan VPS:
-
-1. Push repository ini ke GitHub.
-2. Buka [dashboard.render.com](https://dashboard.render.com/) -> klik **New +** -> **Web Service**.
-3. Hubungkan ke repository ini.
-4. Render akan otomatis mendeteksi `Dockerfile` multi-stage:
-   - Environment: **Docker**
-   - Plan: **Free**
-5. Klik **Create Web Service**. Dalam waktu ~2 menit, PulseOps akan online dengan HTTPS gratis dan auto-renewal SSL.
-
----
-
-## 11. Vibe Coding & AI Collaboration Statement
+## 12. Pernyataan Kolaborasi AI & Vibe Coding
 
 Proyek ini dirancang dan dikembangkan dengan memanfaatkan integrasi **GitHub Copilot (AI / Vibe Coding)**:
 - **Arsitektur Cepat & Tepat:** AI digunakan untuk mempercepat scaffolding pola SRE cloud-native, penyusunan Docker multi-stage, dan pembuatan mock test suite.

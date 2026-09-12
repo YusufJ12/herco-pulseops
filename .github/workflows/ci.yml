@@ -1,0 +1,70 @@
+name: CI / CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go 1.23
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+
+      - name: Verify Dependencies
+        run: go mod verify
+
+      - name: Code Formatting Check
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "Unformatted Go files found:"
+            gofmt -l .
+            exit 1
+          fi
+
+      - name: Run Automated Tests
+        run: |
+          go test -v -coverprofile=coverage.txt -covermode=atomic ./...
+
+      - name: Display Test Coverage
+        run: |
+          go tool cover -func=coverage.txt
+
+  docker:
+    name: Docker Build & Smoke Test
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: pulseops:ci-test
+
+      - name: Smoke Test Container Health
+        run: |
+          docker run -d --name pulseops-ci -p 8080:8080 pulseops:ci-test
+          sleep 4
+          curl --fail --retry 3 --retry-delay 2 http://localhost:8080/healthz
+          curl --fail --retry 3 --retry-delay 2 http://localhost:8080/metrics
+          docker stop pulseops-ci

@@ -1,0 +1,9 @@
+.git
+.github
+*.db
+*.db-*
+data/
+bin/
+*.md
+coverage.txt
+.vscode/
